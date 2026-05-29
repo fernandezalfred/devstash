@@ -1,18 +1,30 @@
-import { FolderPlus, Plus, Search, Sparkles } from "lucide-react";
+"use client";
+
+import { FolderPlus, PanelLeft, Plus, Search, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// Display-only top bar for Phase 1: brand, search field, and action buttons.
-// None of these controls are wired up yet — interactivity arrives in later phases.
-export function TopBar() {
+// Top bar: brand, sidebar toggle, search field, and action buttons. The search
+// and action buttons stay display-only until later phases; the sidebar toggle is
+// wired to the dashboard shell.
+export function TopBar({ onToggleSidebar }: { onToggleSidebar?: () => void }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
-      <div className="flex items-center gap-2 font-semibold">
+      <div className="flex items-center gap-1.5 font-semibold">
         <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
           <Sparkles className="size-4" />
         </span>
-        <span className="text-sm">DevStash</span>
+        <span className="hidden text-sm sm:inline">DevStash</span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          aria-label="Toggle sidebar"
+          onClick={onToggleSidebar}
+          className="ml-1"
+        >
+          <PanelLeft className="size-4" />
+        </Button>
       </div>
 
       <div className="relative mx-auto w-full max-w-xl">

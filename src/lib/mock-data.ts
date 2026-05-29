@@ -10,6 +10,7 @@ export interface ItemType {
   kind: ContentType;
   icon: string; // lucide icon name
   color: string; // hex
+  itemCount: number; // total items of this type (mocked until DB exists)
   isSystem: boolean;
   isPro: boolean;
 }
@@ -69,6 +70,7 @@ export const itemTypes: ItemType[] = [
     kind: "text",
     icon: "Code",
     color: "#3b82f6",
+    itemCount: 24,
     isSystem: true,
     isPro: false,
   },
@@ -79,6 +81,7 @@ export const itemTypes: ItemType[] = [
     kind: "text",
     icon: "Sparkles",
     color: "#8b5cf6",
+    itemCount: 18,
     isSystem: true,
     isPro: false,
   },
@@ -89,6 +92,7 @@ export const itemTypes: ItemType[] = [
     kind: "text",
     icon: "Terminal",
     color: "#f97316",
+    itemCount: 15,
     isSystem: true,
     isPro: false,
   },
@@ -99,16 +103,7 @@ export const itemTypes: ItemType[] = [
     kind: "text",
     icon: "StickyNote",
     color: "#fde047",
-    isSystem: true,
-    isPro: false,
-  },
-  {
-    id: "type_link",
-    name: "Link",
-    slug: "links",
-    kind: "url",
-    icon: "Link",
-    color: "#10b981",
+    itemCount: 12,
     isSystem: true,
     isPro: false,
   },
@@ -119,6 +114,7 @@ export const itemTypes: ItemType[] = [
     kind: "file",
     icon: "File",
     color: "#6b7280",
+    itemCount: 5,
     isSystem: true,
     isPro: true,
   },
@@ -129,8 +125,20 @@ export const itemTypes: ItemType[] = [
     kind: "file",
     icon: "Image",
     color: "#ec4899",
+    itemCount: 3,
     isSystem: true,
     isPro: true,
+  },
+  {
+    id: "type_link",
+    name: "Link",
+    slug: "links",
+    kind: "url",
+    icon: "Link",
+    color: "#10b981",
+    itemCount: 8,
+    isSystem: true,
+    isPro: false,
   },
 ];
 
