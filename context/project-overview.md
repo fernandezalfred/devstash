@@ -25,12 +25,12 @@ This causes **context switching**, **lost knowledge**, and **inconsistent workfl
 
 ## 👥 Target Users
 
-| Persona | Needs |
-| --- | --- |
-| **Everyday Developer** | Fast access to snippets, prompts, commands, and links |
-| **AI-first Developer** | Store prompts, contexts, workflows, system messages |
-| **Content Creator / Educator** | Code blocks, explanations, course notes |
-| **Full-stack Builder** | Patterns, boilerplates, API examples |
+| Persona                        | Needs                                                 |
+| ------------------------------ | ----------------------------------------------------- |
+| **Everyday Developer**         | Fast access to snippets, prompts, commands, and links |
+| **AI-first Developer**         | Store prompts, contexts, workflows, system messages   |
+| **Content Creator / Educator** | Code blocks, explanations, course notes               |
+| **Full-stack Builder**         | Patterns, boilerplates, API examples                  |
 
 ---
 
@@ -40,15 +40,15 @@ This causes **context switching**, **lost knowledge**, and **inconsistent workfl
 
 Every saved resource is an **Item**. Items have a **Type** that determines how they render and behave. Users can create **custom types** (Pro), but the following **system types** ship by default and are immutable:
 
-| Type | Kind | Icon | Color | Free Tier |
-| --- | --- | --- | --- | --- |
-| `snippet` | text | `Code` | `#3b82f6` blue | ✅ |
-| `prompt` | text | `Sparkles` | `#8b5cf6` purple | ✅ |
-| `command` | text | `Terminal` | `#f97316` orange | ✅ |
-| `note` | text | `StickyNote` | `#fde047` yellow | ✅ |
-| `link` | url | `Link` | `#10b981` emerald | ✅ |
-| `file` | file | `File` | `#6b7280` gray | 💎 Pro |
-| `image` | file | `Image` | `#ec4899` pink | 💎 Pro |
+| Type      | Kind | Icon         | Color             | Free Tier |
+| --------- | ---- | ------------ | ----------------- | --------- |
+| `snippet` | text | `Code`       | `#3b82f6` blue    | ✅        |
+| `prompt`  | text | `Sparkles`   | `#8b5cf6` purple  | ✅        |
+| `command` | text | `Terminal`   | `#f97316` orange  | ✅        |
+| `note`    | text | `StickyNote` | `#fde047` yellow  | ✅        |
+| `link`    | url  | `Link`       | `#10b981` emerald | ✅        |
+| `file`    | file | `File`       | `#6b7280` gray    | 💎 Pro    |
+| `image`   | file | `Image`      | `#ec4899` pink    | 💎 Pro    |
 
 Type kinds:
 
@@ -66,9 +66,9 @@ Users group items into **Collections**. An item can belong to **multiple collect
 
 Examples:
 
-- *React Patterns* — snippets + notes
-- *Context Files* — files
-- *Python Snippets* — snippets
+- _React Patterns_ — snippets + notes
+- _Context Files_ — files
+- _Python Snippets_ — snippets
 
 ### C. Search
 
@@ -300,7 +300,7 @@ ItemType ─< Item
 - Unlimited items
 - Unlimited collections
 - File & image uploads
-- Custom types *(later)*
+- Custom types _(later)_
 - AI auto-tagging
 - AI code explanation
 - AI prompt optimizer
@@ -312,6 +312,19 @@ ItemType ─< Item
 ---
 
 ## 🎨 UI / UX
+
+### Design References
+
+- [Notion](https://notion.so) - Clean organization
+- [Linear](https://linear.app) - Modern dev aesthetic
+- [Raycast](https://raycast.com) - Quick access patterns
+
+### Screenshots
+
+Refer to the screenshots below as a base for the dashboard UI. It does not have to be exact. Use it as a reference:
+
+- @context/screenshots/dashboard-ui-main.png
+- @context/screenshots/dashboard-ui-drawer.png
 
 ### Style
 
@@ -365,17 +378,17 @@ ItemType ─< Item
 
 ## 📍 Routes (initial sketch)
 
-| Route | Purpose |
-| --- | --- |
-| `/` | Dashboard — collections + recent items |
-| `/items/snippets` | Snippet list |
-| `/items/prompts` | Prompt list |
-| `/items/commands` | Command list |
-| `/items/notes` | Note list |
-| `/items/links` | Link list |
-| `/items/files` | File list (Pro) |
-| `/items/images` | Image list (Pro) |
-| `/collections` | All collections |
-| `/collections/[id]` | Single collection |
-| `/settings` | Profile, billing, preferences |
-| `/api/*` | Items, uploads, AI, auth |
+| Route               | Purpose                                |
+| ------------------- | -------------------------------------- |
+| `/`                 | Dashboard — collections + recent items |
+| `/items/snippets`   | Snippet list                           |
+| `/items/prompts`    | Prompt list                            |
+| `/items/commands`   | Command list                           |
+| `/items/notes`      | Note list                              |
+| `/items/links`      | Link list                              |
+| `/items/files`      | File list (Pro)                        |
+| `/items/images`     | Image list (Pro)                       |
+| `/collections`      | All collections                        |
+| `/collections/[id]` | Single collection                      |
+| `/settings`         | Profile, billing, preferences          |
+| `/api/*`            | Items, uploads, AI, auth               |
