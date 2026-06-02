@@ -1,6 +1,25 @@
 # Current Feature
 
-None in progress.
+## Dashboard UI Phase 3 — In Progress
+
+Phase 3 of 3 for the dashboard UI layout. Build out the main area to the right of the sidebar. Use the reference screenshot for layout and the mock data file (`@src/lib/mock-data.js`) imported directly until the database is implemented.
+
+### Requirements
+
+- The main area to the right
+- Recent collections
+- Pinned Items
+- 10 Recent items
+- 4 stats cards at the top for number of items, collections, favorite items and favorite collections (not in screenshot)
+
+### References
+
+- @context/screenshots/dashboard-ui-main.png
+- @context/project-overview.md
+- @src/lib/mock-data.js
+- @context/features/dashboard-phase-1-spec.md
+- @context/features/dashboard-phase-2-spec.md
+- @context/features/dashboard-phase-3-spec.md
 
 ## Notes
 

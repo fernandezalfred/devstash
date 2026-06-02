@@ -27,7 +27,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <div
           className={cn(
             "hidden shrink-0 overflow-hidden transition-[width] duration-200 md:block",
-            desktopOpen ? "w-60" : "w-0"
+            desktopOpen ? "w-60" : "w-0",
           )}
         >
           <Sidebar />
@@ -37,7 +37,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <div
           className={cn(
             "fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden",
-            mobileOpen ? "opacity-100" : "pointer-events-none opacity-0"
+            mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
           )}
           onClick={() => setMobileOpen(false)}
           aria-hidden
@@ -45,7 +45,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <div
           className={cn(
             "fixed inset-y-0 left-0 z-50 transition-transform duration-200 md:hidden",
-            mobileOpen ? "translate-x-0" : "-translate-x-full"
+            mobileOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >
           <Sidebar />
