@@ -1,5 +1,22 @@
-// Placeholder main area for Phase 1. The dashboard content (collections grid,
-// pinned items, recent items, stats) is built in Phase 3.
+import { CollectionsGrid } from "@/components/dashboard/CollectionsGrid";
+import { PinnedItems } from "@/components/dashboard/PinnedItems";
+import { RecentItems } from "@/components/dashboard/RecentItems";
+import { StatsCards } from "@/components/dashboard/StatsCards";
+
 export default function DashboardPage() {
-  return <h2 className="text-lg font-semibold">Main</h2>;
+  return (
+    <div className="mx-auto max-w-6xl space-y-8">
+      <div>
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">
+          Your developer knowledge hub
+        </p>
+      </div>
+
+      <StatsCards />
+      <CollectionsGrid />
+      <PinnedItems />
+      <RecentItems />
+    </div>
+  );
 }
