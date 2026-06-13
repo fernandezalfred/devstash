@@ -1,21 +1,30 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
 
-import { collectionTypes, dominantType } from "@/lib/dashboard";
+import { type DashboardCollection } from "@/lib/db/collections";
 import { itemTypeIcons } from "@/lib/item-icons";
-import { type Collection } from "@/lib/mock-data";
 
-// A single collection card. Background is faintly tinted with the dominant item
-// type's color; the bottom row shows an icon per item type present.
-export function CollectionCard({ collection }: { collection: Collection }) {
-  const types = collectionTypes(collection.id);
-  const accent = dominantType(collection.id)?.color;
+// A single collection card. A colored left border reflects the dominant item
+// type; the bottom row shows an icon per item type present in the collection.
+export function CollectionCard({
+  collection,
+}: {
+  collection: DashboardCollection;
+}) {
+  const { accentColor, types } = collection;
 
   return (
     <Link
       href={`/collections/${collection.id}`}
-      className="group flex flex-col rounded-xl border border-border bg-card p-4 transition-colors hover:border-foreground/20"
-      style={accent ? { backgroundColor: `${accent}0d` } : undefined}
+      className="group flex flex-col rounded-xl border border-l-4 border-border bg-card p-4 transition-colors hover:border-foreground/20"
+      style={
+        accentColor
+          ? {
+              borderLeftColor: accentColor,
+              backgroundColor: `${accentColor}0d`,
+            }
+          : undefined
+      }
     >
       <h3 className="flex items-center gap-1.5 font-medium">
         <span className="truncate">{collection.name}</span>
@@ -24,7 +33,7 @@ export function CollectionCard({ collection }: { collection: Collection }) {
         )}
       </h3>
       <p className="mt-0.5 text-xs text-muted-foreground">
-        {collection.itemCount} items
+        {collection.itemCount} {collection.itemCount === 1 ? "item" : "items"}
       </p>
       {collection.description && (
         <p className="mt-2 line-clamp-2 text-sm text-muted-foreground">

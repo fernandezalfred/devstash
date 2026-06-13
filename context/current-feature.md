@@ -1,27 +1,26 @@
 # Current Feature
 
-## Seed Data — Completed
+## Dashboard Collections — Completed
 
-Create/expand the seed script (`prisma/seed.ts`) to populate the database with a demo user, the system item types, and sample collections + items for development and demos. Overwrite/extend the existing system-types-only seed.
+Replace the dummy collection data displayed in the main area of the dashboard (right side) with real data from the Neon database via Prisma. It should look how it does now with the 6 cards of recent collections, but instead of using data from `@src/lib/mock-data.ts`, it should come from the database.
+
+Do not add the items underneath yet — that comes later.
 
 ### Requirements
 
-- **Demo user:** `demo@devstash.io`, name "Demo User", password `12345678` (hash with bcryptjs, 12 rounds), `isPro: false`, `emailVerified: now()`
-- **System item types:** seed all 7 (`snippet`, `prompt`, `command`, `note`, `file`, `image`, `link`) with their Lucide icon names + hex colors, `isSystem: true`
-- **Collections & items** (all owned by the demo user):
-  - **React Patterns** — _Reusable React patterns and hooks_ — 3 TypeScript snippets (custom hooks, component patterns, utility functions)
-  - **AI Workflows** — _AI prompts and workflow automations_ — 3 prompts (code review, documentation generation, refactoring assistance)
-  - **DevOps** — _Infrastructure and deployment resources_ — 1 snippet, 1 command, 2 links (real doc URLs)
-  - **Terminal Commands** — _Useful shell commands for everyday development_ — 4 commands (git, docker, process management, package manager)
-  - **Design Resources** — _UI/UX resources and references_ — 4 links (real URLs: CSS/Tailwind, component libraries, design systems, icon libraries)
-- Seed should be idempotent (safe to re-run) where practical
-- Use real, valid URLs for `link` items
+- Create `src/lib/db/collections.ts` with data fetching functions
+- Fetch collections directly in the server component
+- Collection card border color derived from the most-used content type in that collection
+- Show small icons of all types in that collection
+- Keep the current design (reference the screenshot if needed)
+- Update the collection stats display
 
 ### References
 
-- @context/features/seed-spec.md
+- @context/features/dashboard-collections-spec.md
 - @context/project-overview.md (data models)
-- @prisma/seed.ts (existing system-types seed)
+- @context/screenshots/dashboard-ui-main.png
+- @src/lib/mock-data.ts (current dummy data being replaced)
 
 ## Notes
 
@@ -35,3 +34,4 @@ Create/expand the seed script (`prisma/seed.ts`) to populate the database with a
 - 2026-06-02: Dashboard UI Phase 3 complete. Built out the main area to the right of the sidebar: 4 stats cards (total items, collections, favorite items, favorite collections), a recent collections grid (`CollectionsGrid` + `CollectionCard`, background tinted by the collection's dominant item type), pinned items (`PinnedItems`), and the 10 most-recent items (`RecentItems`), with a shared `ItemRow` (type-colored left border + icon). Added `src/lib/dashboard.ts` for the dashboard data helpers/derivations over the mock data. Disabled the Next.js dev indicator (`devIndicators: false` in `next.config.ts`). Build passes.
 - 2026-06-13: Prisma + Neon PostgreSQL setup complete. Prisma 7 with the `pg` driver adapter (`@prisma/adapter-pg`), client generated to `src/generated/prisma` (gitignored). `prisma.config.ts` drives migrations over a DIRECT (non-pooled) connection while the app runtime uses the pooled `DATABASE_URL` via the adapter in `src/lib/prisma.ts`. Initial schema (`20260608121136_init` migration) covers User/Account/Session/VerificationToken (NextAuth v5), ItemType, Item, Collection, ItemCollection (M:N join), and Tag, with indexes + cascade deletes. `prisma/seed.ts` seeds the 7 immutable system item types. Added `db:*` npm scripts and `.env.example` (DATABASE_URL pooled + DIRECT_URL). Added `scripts/test-db.ts` to smoke-test the connection and print row counts (`tsx scripts/test-db.ts`). Build passes.
 - 2026-06-13: Seed data complete. Expanded `prisma/seed.ts` beyond the system item types to seed a demo user (`demo@devstash.io` / "Demo User", password `12345678` hashed with `bcryptjs` at 12 rounds, `isPro: false`, `emailVerified: now()`, upserted by email) plus 5 collections and 18 items owned by that user: React Patterns (3 TS snippets), AI Workflows (3 prompts), DevOps (1 snippet + 1 command + 2 links), Terminal Commands (4 commands), Design Resources (4 links) — real URLs for all link items. Seed is idempotent: the demo user's collections/items are deleted and recreated each run (ItemCollection join rows cascade). Link items use `contentType: TEXT` with `content: null` + `url` set (the `ContentType` enum has no URL variant). Added `bcryptjs` dependency. Build passes; seed verified against the dev DB and confirmed idempotent on re-run.
+- 2026-06-13: Dashboard Collections complete. Replaced the mock collections in the dashboard main-area grid with live Neon data via Prisma. Added `src/lib/db/collections.ts` → `getDashboardCollections()` (scoped to the demo user until auth lands; ordered most-recently-updated first), which tallies items per type to derive each collection's distinct types (most-frequent first) and dominant-type accent color. `/dashboard/page.tsx` is now an async server component (`export const dynamic = "force-dynamic"`) that fetches collections and computes collection stats from the DB; item stats still come from mock until items are migrated. `CollectionCard` consumes the DB shape and renders a colored left accent border (`border-l-4` + dominant type color, matching the screenshot) plus per-type icons; `CollectionsGrid` and `StatsCards` now take props instead of importing mock data. Sidebar/pinned/recent sections still use mock data (out of scope). Also fixed the `pg` SSL deprecation warning by switching `sslmode=require` → `sslmode=verify-full` in `.env`/`.env.example`. Build passes; verified against the dev DB (5 seeded collections render with correct counts, accent colors, and type icons; no SSL warning).
