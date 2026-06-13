@@ -1,4 +1,5 @@
-// Smoke-tests the database connection and reports current row counts.
+// Smoke-tests the database connection, reports row counts, and prints the
+// seeded demo data (user, collections, items).
 // Run with `tsx scripts/test-db.ts`.
 import "dotenv/config";
 
@@ -8,6 +9,8 @@ import { PrismaClient } from "../src/generated/prisma/client";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
+
+const DEMO_EMAIL = "demo@devstash.io";
 
 async function main() {
   if (!process.env.DATABASE_URL) {
@@ -32,6 +35,54 @@ async function main() {
   console.log(`  items:        ${items}`);
   console.log(`  collections:  ${collections}`);
   console.log(`  tags:         ${tags}`);
+
+  // --- System item types -------------------------------------------------
+  const systemTypes = await prisma.itemType.findMany({
+    where: { isSystem: true, userId: null },
+    orderBy: { name: "asc" },
+  });
+
+  console.log(`\nSystem item types (${systemTypes.length}):`);
+  for (const t of systemTypes) {
+    console.log(`  ${t.icon.padEnd(10)} ${t.name.padEnd(8)} ${t.color}`);
+  }
+
+  // --- Demo user + their collections and items ---------------------------
+  const demo = await prisma.user.findUnique({
+    where: { email: DEMO_EMAIL },
+    include: {
+      collections: {
+        orderBy: { name: "asc" },
+        include: {
+          items: {
+            orderBy: { item: { createdAt: "asc" } },
+            include: { item: { include: { itemType: true } } },
+          },
+        },
+      },
+    },
+  });
+
+  if (!demo) {
+    console.log(`\n⚠️  No demo user found (${DEMO_EMAIL}). Run \`npm run db:seed\`.`);
+    return;
+  }
+
+  console.log(
+    `\nDemo user: ${demo.name ?? "(no name)"} <${demo.email}>  ` +
+      `(isPro: ${demo.isPro}, verified: ${demo.emailVerified ? "yes" : "no"})`,
+  );
+  console.log(`Collections (${demo.collections.length}):`);
+
+  for (const collection of demo.collections) {
+    console.log(`\n  📂 ${collection.name} — ${collection.description ?? ""}`);
+    for (const { item } of collection.items) {
+      const detail = item.url ?? item.language ?? item.itemType.name;
+      console.log(`     • [${item.itemType.name}] ${item.title}  (${detail})`);
+    }
+  }
+
+  console.log("\n✅ Demo data looks good.");
 }
 
 main()
