@@ -2,22 +2,29 @@ import { CollectionsGrid } from "@/components/dashboard/CollectionsGrid";
 import { PinnedItems } from "@/components/dashboard/PinnedItems";
 import { RecentItems } from "@/components/dashboard/RecentItems";
 import { StatsCards } from "@/components/dashboard/StatsCards";
-import { dashboardStats } from "@/lib/dashboard";
 import { getDashboardCollections } from "@/lib/db/collections";
+import {
+  getItemStats,
+  getPinnedItems,
+  getRecentItems,
+} from "@/lib/db/items";
 
 // Render per-request so the dashboard reflects the current DB state instead of
-// baking collections in at build time.
+// baking data in at build time.
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const collections = await getDashboardCollections();
+  const [collections, pinnedItems, recentItems, itemStats] = await Promise.all([
+    getDashboardCollections(),
+    getPinnedItems(),
+    getRecentItems(),
+    getItemStats(),
+  ]);
 
-  // Collection stats come from the database; item stats are still mock until
-  // items are migrated off mock-data.
   const stats = {
-    items: dashboardStats.items,
+    items: itemStats.items,
     collections: collections.length,
-    favoriteItems: dashboardStats.favoriteItems,
+    favoriteItems: itemStats.favoriteItems,
     favoriteCollections: collections.filter((c) => c.isFavorite).length,
   };
 
@@ -32,8 +39,8 @@ export default async function DashboardPage() {
 
       <StatsCards stats={stats} />
       <CollectionsGrid collections={collections} />
-      <PinnedItems />
-      <RecentItems />
+      <PinnedItems items={pinnedItems} />
+      <RecentItems items={recentItems} />
     </div>
   );
 }

@@ -1,26 +1,31 @@
 import Link from "next/link";
 import { Pin, Star } from "lucide-react";
 
-import { formatItemDate, getItemType } from "@/lib/dashboard";
+import { type DashboardItem } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
-import { type Item } from "@/lib/mock-data";
+
+function formatItemDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+}
 
 // A single item row, shared by the Pinned and Recent sections. The left border
 // and icon are color-coded by the item's type.
-export function ItemRow({ item }: { item: Item }) {
-  const type = getItemType(item.typeId);
-  const Icon = type ? itemTypeIcons[type.icon] : undefined;
-  const accent = type?.color;
+export function ItemRow({ item }: { item: DashboardItem }) {
+  const Icon = itemTypeIcons[item.typeIcon];
+  const accent = item.typeColor;
 
   return (
     <Link
-      href={`/items/${type?.slug ?? ""}`}
+      href={`/items/${item.slug}`}
       className="flex items-start gap-3 rounded-lg border border-l-2 border-border bg-card p-3 transition-colors hover:border-foreground/20"
-      style={accent ? { borderLeftColor: accent } : undefined}
+      style={{ borderLeftColor: accent }}
     >
       <span
         className="flex size-8 shrink-0 items-center justify-center rounded-md"
-        style={accent ? { backgroundColor: `${accent}1a` } : undefined}
+        style={{ backgroundColor: `${accent}1a` }}
       >
         {Icon && <Icon className="size-4" style={{ color: accent }} />}
       </span>

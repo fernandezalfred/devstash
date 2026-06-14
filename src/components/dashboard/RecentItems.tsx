@@ -1,10 +1,10 @@
 import { Clock } from "lucide-react";
 
-import { recentItems } from "@/lib/dashboard";
+import { type DashboardItem } from "@/lib/db/items";
 
 import { ItemRow } from "./ItemRow";
 
-export function RecentItems() {
+export function RecentItems({ items }: { items: DashboardItem[] }) {
   return (
     <section>
       <div className="mb-3 flex items-center gap-1.5">
@@ -12,7 +12,7 @@ export function RecentItems() {
         <h2 className="text-lg font-semibold">Recent</h2>
       </div>
       <div className="space-y-2">
-        {recentItems.map((item) => (
+        {items.map((item) => (
           <ItemRow key={item.id} item={item} />
         ))}
       </div>
