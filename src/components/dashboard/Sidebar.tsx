@@ -4,16 +4,11 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, Settings, Star } from "lucide-react";
 
-import { collections, currentUser, itemTypes } from "@/lib/mock-data";
+import { type DashboardCollection } from "@/lib/db/collections";
+import { type SidebarItemType } from "@/lib/db/items";
+import { currentUser } from "@/lib/mock-data";
 import { itemTypeIcons } from "@/lib/item-icons";
 import { cn } from "@/lib/utils";
-
-const favoriteCollections = collections.filter((c) => c.isFavorite);
-// Non-favorite collections, most recently updated first. Favorites are shown in
-// their own section above, so they're excluded here to avoid duplication.
-const otherCollections = collections
-  .filter((c) => !c.isFavorite)
-  .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
 const userInitials = currentUser.name
   .split(" ")
@@ -35,15 +30,15 @@ function SectionHeader({
     <button
       type="button"
       onClick={onToggle}
-      className="flex w-full items-center justify-between px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+      className="flex w-full cursor-pointer items-center gap-1.5 px-2 py-1 text-xs font-semibold tracking-wider text-muted-foreground uppercase transition-colors hover:text-foreground"
     >
-      <span>{label}</span>
       <ChevronDown
         className={cn(
-          "size-3.5 transition-transform",
-          open ? "rotate-0" : "-rotate-90"
+          "size-3.5 shrink-0 transition-transform",
+          open ? "rotate-0" : "-rotate-90",
         )}
       />
+      <span>{label}</span>
     </button>
   );
 }
@@ -51,9 +46,20 @@ function SectionHeader({
 const navRowClass =
   "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground";
 
-export function Sidebar() {
+export function Sidebar({
+  itemTypes,
+  collections,
+}: {
+  itemTypes: SidebarItemType[];
+  collections: DashboardCollection[];
+}) {
   const [typesOpen, setTypesOpen] = useState(true);
   const [collectionsOpen, setCollectionsOpen] = useState(true);
+
+  const favoriteCollections = collections.filter((c) => c.isFavorite);
+  // Non-favorites — favorites are shown in their own section above, so they're
+  // excluded here to avoid duplication. Already most-recently-updated first.
+  const otherCollections = collections.filter((c) => !c.isFavorite);
 
   return (
     <aside className="flex h-full w-60 shrink-0 flex-col border-r border-sidebar-border bg-sidebar">
@@ -87,7 +93,7 @@ export function Sidebar() {
         </div>
 
         {/* Collections */}
-        <div className="space-y-0.5">
+        <div className="space-y-0.5 border-t border-sidebar-border pt-4">
           <SectionHeader
             label="Collections"
             open={collectionsOpen}
@@ -97,7 +103,7 @@ export function Sidebar() {
             <>
               {favoriteCollections.length > 0 && (
                 <>
-                  <p className="px-2 pt-1.5 pb-0.5 text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
+                  <p className="px-2 pt-1.5 pb-0.5 text-sm font-semibold tracking-wider text-muted-foreground/70 lowercase">
                     Favorites
                   </p>
                   {favoriteCollections.map((collection) => (
@@ -106,15 +112,15 @@ export function Sidebar() {
                       href={`/collections/${collection.id}`}
                       className={navRowClass}
                     >
-                      <span className="flex-1 truncate">{collection.name}</span>
                       <Star className="size-3.5 shrink-0 fill-yellow-400 text-yellow-400" />
+                      <span className="flex-1 truncate">{collection.name}</span>
                     </Link>
                   ))}
                 </>
               )}
 
-              <p className="px-2 pt-1.5 pb-0.5 text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
-                All Collections
+              <p className="px-2 pt-1.5 pb-0.5 text-sm font-semibold tracking-wider text-muted-foreground/70 lowercase">
+                Recents
               </p>
               {otherCollections.map((collection) => (
                 <Link
@@ -122,12 +128,24 @@ export function Sidebar() {
                   href={`/collections/${collection.id}`}
                   className={navRowClass}
                 >
+                  {/* Colored dot reflects the collection's dominant item type. */}
+                  <span
+                    className="size-2.5 shrink-0 rounded-full"
+                    style={{
+                      backgroundColor:
+                        collection.accentColor ?? "var(--muted-foreground)",
+                    }}
+                  />
                   <span className="flex-1 truncate">{collection.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {collection.itemCount}
-                  </span>
                 </Link>
               ))}
+
+              <Link
+                href="/collections"
+                className="mt-1 flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+              >
+                View all collections →
+              </Link>
             </>
           )}
         </div>

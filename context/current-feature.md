@@ -1,26 +1,8 @@
 # Current Feature
 
-## Dashboard Items — In Progress
+## status
 
-Replace the dummy item data in the dashboard main area (right side) — both the pinned items and the recent items — with real data from the Neon database via Prisma. It should look how it does now, but sourced from the database instead of `@src/lib/mock-data.ts`.
-
-If there are no pinned items, the pinned section should not display at all.
-
-### Requirements
-
-- Create `src/lib/db/items.ts` with data fetching functions
-- Fetch items directly in the server component
-- Item card icon/border derived from the item type
-- Display item type tags and anything else currently shown (reference the screenshot if needed)
-- Update the (collection) stats display so item stats also come from the DB
-
-### References
-
-- @context/features/dashboard-items-spec.md
-- @context/project-overview.md (data models)
-- @context/screenshots/dashboard-ui-main.png
-- @src/lib/mock-data.ts (current dummy data being replaced)
-- @src/lib/db/collections.ts (pattern from the completed Dashboard Collections feature)
+Completed
 
 ## Notes
 
@@ -35,3 +17,5 @@ If there are no pinned items, the pinned section should not display at all.
 - 2026-06-13: Prisma + Neon PostgreSQL setup complete. Prisma 7 with the `pg` driver adapter (`@prisma/adapter-pg`), client generated to `src/generated/prisma` (gitignored). `prisma.config.ts` drives migrations over a DIRECT (non-pooled) connection while the app runtime uses the pooled `DATABASE_URL` via the adapter in `src/lib/prisma.ts`. Initial schema (`20260608121136_init` migration) covers User/Account/Session/VerificationToken (NextAuth v5), ItemType, Item, Collection, ItemCollection (M:N join), and Tag, with indexes + cascade deletes. `prisma/seed.ts` seeds the 7 immutable system item types. Added `db:*` npm scripts and `.env.example` (DATABASE_URL pooled + DIRECT_URL). Added `scripts/test-db.ts` to smoke-test the connection and print row counts (`tsx scripts/test-db.ts`). Build passes.
 - 2026-06-13: Seed data complete. Expanded `prisma/seed.ts` beyond the system item types to seed a demo user (`demo@devstash.io` / "Demo User", password `12345678` hashed with `bcryptjs` at 12 rounds, `isPro: false`, `emailVerified: now()`, upserted by email) plus 5 collections and 18 items owned by that user: React Patterns (3 TS snippets), AI Workflows (3 prompts), DevOps (1 snippet + 1 command + 2 links), Terminal Commands (4 commands), Design Resources (4 links) — real URLs for all link items. Seed is idempotent: the demo user's collections/items are deleted and recreated each run (ItemCollection join rows cascade). Link items use `contentType: TEXT` with `content: null` + `url` set (the `ContentType` enum has no URL variant). Added `bcryptjs` dependency. Build passes; seed verified against the dev DB and confirmed idempotent on re-run.
 - 2026-06-13: Dashboard Collections complete. Replaced the mock collections in the dashboard main-area grid with live Neon data via Prisma. Added `src/lib/db/collections.ts` → `getDashboardCollections()` (scoped to the demo user until auth lands; ordered most-recently-updated first), which tallies items per type to derive each collection's distinct types (most-frequent first) and dominant-type accent color. `/dashboard/page.tsx` is now an async server component (`export const dynamic = "force-dynamic"`) that fetches collections and computes collection stats from the DB; item stats still come from mock until items are migrated. `CollectionCard` consumes the DB shape and renders a colored left accent border (`border-l-4` + dominant type color, matching the screenshot) plus per-type icons; `CollectionsGrid` and `StatsCards` now take props instead of importing mock data. Sidebar/pinned/recent sections still use mock data (out of scope). Also fixed the `pg` SSL deprecation warning by switching `sslmode=require` → `sslmode=verify-full` in `.env`/`.env.example`. Build passes; verified against the dev DB (5 seeded collections render with correct counts, accent colors, and type icons; no SSL warning).
+- 2026-06-14: Dashboard Items complete. Replaced the mock pinned/recent items and item stats in the dashboard main area with live Neon data via Prisma. Added `src/lib/db/items.ts` with `getPinnedItems()`, `getRecentItems()` (10 most recent), and `getItemStats()` (total + favorite item counts), all scoped to the demo user until auth lands; each returns a `DashboardItem` shape that derives the type icon/color/slug per item. `/dashboard/page.tsx` now fetches collections, pinned items, recent items, and item stats in parallel via `Promise.all`; the stats object sources its item figures from `getItemStats()` instead of mock. `ItemRow` consumes the DB item shape (its own `formatItemDate` helper) and the pinned section hides entirely when there are no pinned items. Build passes. Merged to main and pushed; branch deleted.
+- 2026-06-14: Stats & Sidebar complete. Sourced the sidebar (item types + collections) from Neon via Prisma; main-area stats were already DB-backed. Added `getSidebarItemTypes()` to `src/lib/db/items.ts` — the 7 system types with the demo user's per-type item counts, ordered to match the screenshot (links last). `dashboard/layout.tsx` is now an async server component (`force-dynamic`) that fetches sidebar types + collections and passes them through `DashboardShell` to the client `Sidebar`. Sidebar Types link to `/items/[slug]` with icons + counts; Collections show a "favorites" section (gold star, left) and "recents" (colored dot by dominant type, left), both sub-headers title-styled + lowercase, plus a "View all collections →" link to `/collections`. Added a border divider between Types and Collections, made section headers uppercase/bolder with the chevron on the left, and added `cursor-pointer` to the collapse toggles (Tailwind v4 drops the default button cursor). Seed: added an `isFavorite` flag to `SeedCollection` and marked React Patterns + Design Resources as favorites; re-seeded. Build passes; verified against the dev DB.

@@ -97,6 +97,7 @@ type SeedItem = TextItem | LinkItem;
 type SeedCollection = {
   name: string;
   description: string;
+  isFavorite?: boolean;
   items: SeedItem[];
 };
 
@@ -104,6 +105,7 @@ const COLLECTIONS: SeedCollection[] = [
   {
     name: "React Patterns",
     description: "Reusable React patterns and hooks",
+    isFavorite: true,
     items: [
       {
         type: "snippet",
@@ -304,6 +306,7 @@ CMD ["npm", "start"]`,
   {
     name: "Design Resources",
     description: "UI/UX resources and references",
+    isFavorite: true,
     items: [
       {
         type: "link",
@@ -349,7 +352,12 @@ async function seedCollectionsAndItems(userId: string) {
 
   for (const col of COLLECTIONS) {
     const collection = await prisma.collection.create({
-      data: { name: col.name, description: col.description, userId },
+      data: {
+        name: col.name,
+        description: col.description,
+        isFavorite: col.isFavorite ?? false,
+        userId,
+      },
     });
 
     for (const item of col.items) {

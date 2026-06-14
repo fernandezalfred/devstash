@@ -75,6 +75,59 @@ export async function getRecentItems(limit = 10): Promise<DashboardItem[]> {
   return items.map(toDashboardItem);
 }
 
+// A system item type for the sidebar Types list, with the demo user's count.
+export interface SidebarItemType {
+  id: string;
+  name: string; // display singular, e.g. "Snippet"
+  slug: string; // route slug, e.g. "snippets"
+  icon: string; // lucide icon name
+  color: string; // hex
+  itemCount: number;
+}
+
+// System item type order for the sidebar — matches the dashboard screenshot
+// (links last) rather than the DB insertion order.
+const SYSTEM_TYPE_ORDER = [
+  "snippet",
+  "prompt",
+  "command",
+  "note",
+  "file",
+  "image",
+  "link",
+];
+
+// System item types with the demo user's item count for each, ordered for the
+// sidebar. Types with no items still appear (count 0).
+export async function getSidebarItemTypes(): Promise<SidebarItemType[]> {
+  const [types, counts] = await Promise.all([
+    prisma.itemType.findMany({ where: { isSystem: true, userId: null } }),
+    prisma.item.groupBy({
+      by: ["itemTypeId"],
+      where: { user: { email: DEMO_USER_EMAIL } },
+      _count: { _all: true },
+    }),
+  ]);
+
+  const countByTypeId = new Map(
+    counts.map((entry) => [entry.itemTypeId, entry._count._all]),
+  );
+
+  return types
+    .sort(
+      (a, b) =>
+        SYSTEM_TYPE_ORDER.indexOf(a.name) - SYSTEM_TYPE_ORDER.indexOf(b.name),
+    )
+    .map((type) => ({
+      id: type.id,
+      name: type.name.charAt(0).toUpperCase() + type.name.slice(1),
+      slug: `${type.name}s`,
+      icon: type.icon,
+      color: type.color,
+      itemCount: countByTypeId.get(type.id) ?? 0,
+    }));
+}
+
 export interface DashboardItemStats {
   items: number;
   favoriteItems: number;

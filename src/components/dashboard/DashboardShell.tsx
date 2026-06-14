@@ -5,12 +5,23 @@ import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { type DashboardCollection } from "@/lib/db/collections";
+import { type SidebarItemType } from "@/lib/db/items";
 import { cn } from "@/lib/utils";
 
 // Owns the dashboard layout and sidebar visibility state. On desktop the sidebar
 // collapses inline; on mobile it slides in as an overlay drawer. The same toggle
-// button in the top bar drives whichever mode is active.
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+// button in the top bar drives whichever mode is active. Sidebar data is fetched
+// in the server layout and passed through.
+export function DashboardShell({
+  children,
+  itemTypes,
+  collections,
+}: {
+  children: React.ReactNode;
+  itemTypes: SidebarItemType[];
+  collections: DashboardCollection[];
+}) {
   const isMobile = useIsMobile();
   const [desktopOpen, setDesktopOpen] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -30,7 +41,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             desktopOpen ? "w-60" : "w-0",
           )}
         >
-          <Sidebar />
+          <Sidebar itemTypes={itemTypes} collections={collections} />
         </div>
 
         {/* Mobile: overlay drawer */}
@@ -48,7 +59,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >
-          <Sidebar />
+          <Sidebar itemTypes={itemTypes} collections={collections} />
         </div>
 
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
