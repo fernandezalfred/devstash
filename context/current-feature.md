@@ -1,26 +1,26 @@
 # Current Feature
 
-## Dashboard Collections — Completed
+## Dashboard Items — In Progress
 
-Replace the dummy collection data displayed in the main area of the dashboard (right side) with real data from the Neon database via Prisma. It should look how it does now with the 6 cards of recent collections, but instead of using data from `@src/lib/mock-data.ts`, it should come from the database.
+Replace the dummy item data in the dashboard main area (right side) — both the pinned items and the recent items — with real data from the Neon database via Prisma. It should look how it does now, but sourced from the database instead of `@src/lib/mock-data.ts`.
 
-Do not add the items underneath yet — that comes later.
+If there are no pinned items, the pinned section should not display at all.
 
 ### Requirements
 
-- Create `src/lib/db/collections.ts` with data fetching functions
-- Fetch collections directly in the server component
-- Collection card border color derived from the most-used content type in that collection
-- Show small icons of all types in that collection
-- Keep the current design (reference the screenshot if needed)
-- Update the collection stats display
+- Create `src/lib/db/items.ts` with data fetching functions
+- Fetch items directly in the server component
+- Item card icon/border derived from the item type
+- Display item type tags and anything else currently shown (reference the screenshot if needed)
+- Update the (collection) stats display so item stats also come from the DB
 
 ### References
 
-- @context/features/dashboard-collections-spec.md
+- @context/features/dashboard-items-spec.md
 - @context/project-overview.md (data models)
 - @context/screenshots/dashboard-ui-main.png
 - @src/lib/mock-data.ts (current dummy data being replaced)
+- @src/lib/db/collections.ts (pattern from the completed Dashboard Collections feature)
 
 ## Notes
 
