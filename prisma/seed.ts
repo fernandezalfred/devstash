@@ -82,6 +82,7 @@ type TextItem = {
   content: string;
   description?: string;
   language?: string;
+  isPinned?: boolean;
 };
 
 // A link item (url type).
@@ -90,6 +91,7 @@ type LinkItem = {
   title: string;
   url: string;
   description?: string;
+  isPinned?: boolean;
 };
 
 type SeedItem = TextItem | LinkItem;
@@ -112,6 +114,7 @@ const COLLECTIONS: SeedCollection[] = [
         title: "useDebounce hook",
         description: "Debounce a fast-changing value (search inputs, etc.)",
         language: "typescript",
+        isPinned: true,
         content: `import { useEffect, useState } from "react";
 
 export function useDebounce<T>(value: T, delay = 300): T {
@@ -172,6 +175,7 @@ export function cn(...inputs: ClassValue[]) {
         type: "prompt",
         title: "Code review prompt",
         description: "Ask an LLM for a focused pull-request review",
+        isPinned: true,
         content: `You are a senior engineer reviewing a pull request. Review the diff below for:
 
 1. Correctness bugs and edge cases
@@ -292,6 +296,7 @@ CMD ["npm", "start"]`,
         title: "Find and kill process on a port",
         description: "Free up a port held by a stray process",
         language: "bash",
+        isPinned: true,
         content: `lsof -ti tcp:3000 | xargs kill -9`,
       },
       {
@@ -313,6 +318,7 @@ CMD ["npm", "start"]`,
         title: "Tailwind CSS Documentation",
         description: "Utility-first CSS framework reference",
         url: "https://tailwindcss.com/docs",
+        isPinned: true,
       },
       {
         type: "link",
@@ -376,6 +382,7 @@ async function seedCollectionsAndItems(userId: string) {
           content: isLink ? null : item.content,
           url: isLink ? item.url : null,
           language: isLink ? null : item.language,
+          isPinned: item.isPinned ?? false,
           userId,
           itemTypeId,
           collections: { create: { collectionId: collection.id } },
