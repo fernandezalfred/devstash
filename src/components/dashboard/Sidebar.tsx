@@ -43,6 +43,32 @@ function SectionHeader({
   );
 }
 
+// Item types gated behind the Pro plan (per the free-tier table in the spec).
+const PRO_TYPE_SLUGS = new Set(["files", "images"]);
+
+function ProTag() {
+  return (
+    <span className="shrink-0 rounded-full bg-yellow-400/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-yellow-400 uppercase">
+      Pro
+    </span>
+  );
+}
+
+function PlanBadge({ isPro }: { isPro: boolean }) {
+  return (
+    <span
+      className={cn(
+        "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
+        isPro
+          ? "bg-yellow-400/15 text-yellow-400"
+          : "bg-muted text-muted-foreground",
+      )}
+    >
+      {isPro ? "Pro" : "Free"}
+    </span>
+  );
+}
+
 const navRowClass =
   "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground";
 
@@ -84,9 +110,13 @@ export function Sidebar({
                     <Icon className="size-4" style={{ color: type.color }} />
                   )}
                   <span className="flex-1 truncate">{type.name}s</span>
-                  <span className="text-xs text-muted-foreground">
-                    {type.itemCount}
-                  </span>
+                  {PRO_TYPE_SLUGS.has(type.slug) ? (
+                    <ProTag />
+                  ) : (
+                    <span className="text-xs text-muted-foreground">
+                      {type.itemCount}
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -157,9 +187,12 @@ export function Sidebar({
           {userInitials}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-sidebar-foreground">
-            {currentUser.name}
-          </p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-sm font-medium text-sidebar-foreground">
+              {currentUser.name}
+            </p>
+            <PlanBadge isPro={currentUser.isPro} />
+          </div>
           <p className="truncate text-xs text-muted-foreground">
             {currentUser.email}
           </p>
