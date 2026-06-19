@@ -32,9 +32,15 @@ export async function getDashboardCollections(): Promise<DashboardCollection[]> 
     orderBy: { updatedAt: "desc" },
     include: {
       items: {
-        include: {
+        // The 7 system types are constant, so only pull the fields the card
+        // needs instead of every column of itemType for every item.
+        select: {
           item: {
-            include: { itemType: true },
+            select: {
+              itemType: {
+                select: { id: true, name: true, icon: true, color: true },
+              },
+            },
           },
         },
       },
