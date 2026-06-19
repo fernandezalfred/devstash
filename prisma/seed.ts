@@ -9,6 +9,10 @@ import bcrypt from "bcryptjs";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set. Check your .env file.");
+}
+
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
@@ -27,7 +31,9 @@ const SYSTEM_ITEM_TYPES = [
 const DEMO_USER = {
   email: "demo@devstash.io",
   name: "Demo User",
-  password: "12345678",
+  // Keep the demo credentials out of source. Set DEMO_USER_PASSWORD locally
+  // (see .env.example); the fallback is for throwaway local dev only.
+  password: process.env.DEMO_USER_PASSWORD ?? "changeme-local-dev",
 } as const;
 
 async function seedSystemItemTypes() {

@@ -7,16 +7,16 @@ import { PrismaPg } from "@prisma/adapter-pg";
 
 import { PrismaClient } from "../src/generated/prisma/client";
 
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL is not set. Check your .env file.");
+}
+
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
 const DEMO_EMAIL = "demo@devstash.io";
 
 async function main() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL is not set. Check your .env file.");
-  }
-
   // A trivial query confirms we can actually reach the database.
   await prisma.$queryRaw`SELECT 1`;
   console.log("✅ Connected to the database.\n");

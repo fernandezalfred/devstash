@@ -1,10 +1,21 @@
-# Current Feature
+# Current Feature: Low-Risk Audit Quick Wins
 
 ## status
 
-Completed
+In Progress
+
+## Goals
+
+- **Fix the N+1 / over-fetch in `getDashboardCollections`** (`src/lib/db/collections.ts:42`): replace `include: { itemType: true }` with a `select` of only the fields the card uses (`id`, `name`, `icon`, `color`). The 7 system types are constant, so fetching every column for every item's type is wasted I/O on the main dashboard query.
+- **Delete dead module `src/lib/dashboard.ts`**: none of its exports are imported by any live component (the dashboard uses the `src/lib/db/*` helpers; `ItemRow.tsx` has its own `formatItemDate`). Removing it also resolves the duplicated `formatItemDate` and drops its dead dependency on `mock-data.ts`.
+- **Move the demo password out of source** (`prisma/seed.ts`): read it from `process.env.DEMO_USER_PASSWORD` (fallback to a local placeholder) instead of the hardcoded `"12345678"`, and document the var in `.env.example`.
+- **Guard `DATABASE_URL` in scripts** (`prisma/seed.ts`, `scripts/test-db.ts`): throw a clear error when the var is missing, matching the guard already in `src/lib/prisma.ts`, so misconfiguration fails with a readable message.
 
 ## Notes
+
+- Scope is limited to little/no-risk cleanups from the 2026-06-19 code-scanner audit. **Authentication is not implemented yet**, so anything tied to the auth migration is explicitly out of scope: the `user.email` → `userId` query rewrite, `cache()`-wrapping the remaining item helpers, and the module-scope `userInitials` concern are all deferred until auth lands.
+- The N+1 fix must preserve behavior: `getDashboardCollections` still derives `itemCount` from `collection.items.length`, the distinct/ranked types, and the dominant `accentColor`. Only the shape of the `itemType` fetch changes (full row → 4 selected fields).
+- Verify with `npm run build` and a dashboard load against the dev DB (collection counts, accent colors, and type icons should be unchanged). Re-run the seed to confirm the env-var password path works.
 
 ## History
 
