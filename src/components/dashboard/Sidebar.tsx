@@ -2,20 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ChevronDown, Settings, Star } from "lucide-react";
+import { ChevronDown, Star } from "lucide-react";
 
+import { UserMenu } from "@/components/dashboard/UserMenu";
 import { type DashboardCollection } from "@/lib/db/collections";
 import { type SidebarItemType } from "@/lib/db/items";
-import { currentUser } from "@/lib/mock-data";
+import { type CurrentUser } from "@/lib/db/users";
 import { itemTypeIcons } from "@/lib/item-icons";
 import { cn } from "@/lib/utils";
-
-const userInitials = currentUser.name
-  .split(" ")
-  .map((part) => part[0])
-  .join("")
-  .slice(0, 2)
-  .toUpperCase();
 
 function SectionHeader({
   label,
@@ -54,30 +48,17 @@ function ProTag() {
   );
 }
 
-function PlanBadge({ isPro }: { isPro: boolean }) {
-  return (
-    <span
-      className={cn(
-        "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
-        isPro
-          ? "bg-yellow-400/15 text-yellow-400"
-          : "bg-muted text-muted-foreground",
-      )}
-    >
-      {isPro ? "Pro" : "Free"}
-    </span>
-  );
-}
-
 const navRowClass =
   "flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground";
 
 export function Sidebar({
   itemTypes,
   collections,
+  user,
 }: {
   itemTypes: SidebarItemType[];
   collections: DashboardCollection[];
+  user: CurrentUser;
 }) {
   const [typesOpen, setTypesOpen] = useState(true);
   const [collectionsOpen, setCollectionsOpen] = useState(true);
@@ -182,29 +163,12 @@ export function Sidebar({
       </nav>
 
       {/* User area */}
-      <div className="flex items-center gap-2.5 border-t border-sidebar-border p-3">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-xs font-medium text-sidebar-primary-foreground">
-          {userInitials}
-        </span>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5">
-            <p className="truncate text-sm font-medium text-sidebar-foreground">
-              {currentUser.name}
-            </p>
-            <PlanBadge isPro={currentUser.isPro} />
-          </div>
-          <p className="truncate text-xs text-muted-foreground">
-            {currentUser.email}
-          </p>
-        </div>
-        <Link
-          href="/settings"
-          aria-label="Settings"
-          className="flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-        >
-          <Settings className="size-4" />
-        </Link>
-      </div>
+      <UserMenu
+        name={user.name}
+        email={user.email}
+        image={user.image}
+        isPro={user.isPro}
+      />
     </aside>
   );
 }
