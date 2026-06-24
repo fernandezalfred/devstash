@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toast";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -39,8 +39,10 @@ export function RegisterForm() {
       return;
     }
 
-    // Account created — send the user to sign in.
-    router.push("/sign-in?registered=1");
+    // Account created — toast persists across the client navigation (the
+    // <Toaster> lives in the root layout), then send the user to sign in.
+    toast("Account created! You can now sign in.");
+    router.push("/sign-in");
   }
 
   return (
