@@ -8,9 +8,9 @@ import { safeCallbackUrl } from "@/lib/safe-callback-url";
 export default async function SignInPage({
   searchParams,
 }: {
-  searchParams: Promise<{ callbackUrl?: string; registered?: string }>;
+  searchParams: Promise<{ callbackUrl?: string }>;
 }) {
-  const { callbackUrl, registered } = await searchParams;
+  const { callbackUrl } = await searchParams;
   const destination = safeCallbackUrl(callbackUrl);
 
   // Already signed in — skip the form.
@@ -29,12 +29,6 @@ export default async function SignInPage({
             Sign in to your account
           </p>
         </div>
-
-        {registered && (
-          <p className="rounded-md border border-border bg-muted/50 px-3 py-2 text-center text-sm text-muted-foreground">
-            Account created — sign in to continue.
-          </p>
-        )}
 
         <SignInForm callbackUrl={destination} />
       </div>
