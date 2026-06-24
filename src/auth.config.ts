@@ -6,6 +6,10 @@ import type { NextAuthConfig } from "next-auth";
 // and no DB/bcrypt logic. The Credentials `authorize` here is a placeholder —
 // auth.ts overrides it with the real bcrypt validation (Node runtime only).
 export default {
+  // Custom sign-in page (Phase 3) — replaces NextAuth's default page.
+  pages: {
+    signIn: "/sign-in",
+  },
   providers: [
     GitHub,
     Credentials({

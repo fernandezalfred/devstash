@@ -7,6 +7,7 @@ import { TopBar } from "@/components/dashboard/TopBar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { type DashboardCollection } from "@/lib/db/collections";
 import { type SidebarItemType } from "@/lib/db/items";
+import { type CurrentUser } from "@/lib/db/users";
 import { cn } from "@/lib/utils";
 
 // Owns the dashboard layout and sidebar visibility state. On desktop the sidebar
@@ -17,10 +18,12 @@ export function DashboardShell({
   children,
   itemTypes,
   collections,
+  user,
 }: {
   children: React.ReactNode;
   itemTypes: SidebarItemType[];
   collections: DashboardCollection[];
+  user: CurrentUser;
 }) {
   const isMobile = useIsMobile();
   const [desktopOpen, setDesktopOpen] = useState(true);
@@ -41,7 +44,7 @@ export function DashboardShell({
             desktopOpen ? "w-60" : "w-0",
           )}
         >
-          <Sidebar itemTypes={itemTypes} collections={collections} />
+          <Sidebar itemTypes={itemTypes} collections={collections} user={user} />
         </div>
 
         {/* Mobile: overlay drawer */}
@@ -59,7 +62,7 @@ export function DashboardShell({
             mobileOpen ? "translate-x-0" : "-translate-x-full",
           )}
         >
-          <Sidebar itemTypes={itemTypes} collections={collections} />
+          <Sidebar itemTypes={itemTypes} collections={collections} user={user} />
         </div>
 
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
