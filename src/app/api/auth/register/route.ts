@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendVerificationEmail } from "@/lib/email";
 import { buildVerifyUrl, createVerificationToken } from "@/lib/verification";
+import { isEmailVerificationEnabled } from "@/lib/flags";
 
 const RegisterSchema = z
   .object({
@@ -37,30 +38,44 @@ export async function POST(request: Request) {
     );
   }
 
+  // When verification is disabled, mark the account verified immediately and
+  // skip the email entirely (e.g. no Resend sending domain configured yet).
+  const verificationRequired = isEmailVerificationEnabled();
+
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
-    data: { name, email, passwordHash, emailVerified: null },
+    data: {
+      name,
+      email,
+      passwordHash,
+      emailVerified: verificationRequired ? null : new Date(),
+    },
   });
 
   // Send the verification email. A failure here doesn't fail registration —
   // the account exists and the user can request a fresh link later.
-  try {
-    const token = await createVerificationToken(email);
-    const origin = new URL(request.url).origin;
-    const result = await sendVerificationEmail({
-      to: email,
-      name,
-      verifyUrl: buildVerifyUrl(origin, token),
-    });
-    if (!result.ok) {
-      console.error("Verification email not sent:", result.error);
+  if (verificationRequired) {
+    try {
+      const token = await createVerificationToken(email);
+      const origin = new URL(request.url).origin;
+      const result = await sendVerificationEmail({
+        to: email,
+        name,
+        verifyUrl: buildVerifyUrl(origin, token),
+      });
+      if (!result.ok) {
+        console.error("Verification email not sent:", result.error);
+      }
+    } catch (err) {
+      console.error("Failed to send verification email", err);
     }
-  } catch (err) {
-    console.error("Failed to send verification email", err);
   }
 
   return NextResponse.json(
-    { success: true, data: { id: user.id, email: user.email } },
+    {
+      success: true,
+      data: { id: user.id, email: user.email, verificationRequired },
+    },
     { status: 201 },
   );
 }
