@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/toast";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -39,10 +38,9 @@ export function RegisterForm() {
       return;
     }
 
-    // Account created — toast persists across the client navigation (the
-    // <Toaster> lives in the root layout), then send the user to sign in.
-    toast("Account created! You can now sign in.");
-    router.push("/sign-in");
+    // Account created — send the user to the "check your email" page so they
+    // know to click the verification link before signing in.
+    router.push(`/check-email?email=${encodeURIComponent(email)}`);
   }
 
   return (

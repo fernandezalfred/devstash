@@ -1,10 +1,17 @@
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/prisma";
 import authConfig from "@/auth.config";
+
+// Thrown when credentials are valid but the email hasn't been verified yet.
+// The `code` surfaces to the client via signIn()'s result so the form can show
+// a specific "verify your email" message (and offer to resend).
+export class EmailNotVerifiedError extends CredentialsSignin {
+  code = "email_not_verified";
+}
 
 // Real credentials validation. Kept here (not in auth.config.ts) so bcrypt and
 // the Prisma adapter stay out of the edge config. This overrides the placeholder
@@ -25,6 +32,9 @@ const credentials = Credentials({
 
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) return null;
+
+    // Credentials are correct but the email must be verified before sign-in.
+    if (!user.emailVerified) throw new EmailNotVerifiedError();
 
     return { id: user.id, name: user.name, email: user.email, image: user.image };
   },

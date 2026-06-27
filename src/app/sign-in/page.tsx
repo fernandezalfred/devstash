@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
 import { SignInForm } from "@/components/auth/SignInForm";
+import { getCurrentUser } from "@/lib/db/users";
 import { safeCallbackUrl } from "@/lib/safe-callback-url";
 
 export default async function SignInPage({
@@ -13,9 +13,11 @@ export default async function SignInPage({
   const { callbackUrl } = await searchParams;
   const destination = safeCallbackUrl(callbackUrl);
 
-  // Already signed in — skip the form.
-  const session = await auth();
-  if (session?.user) redirect(destination);
+  // Already signed in — skip the form. Use the DB-backed lookup (not just the
+  // JWT) so a stale session for a deleted user doesn't bounce back to a guarded
+  // page and cause a redirect loop.
+  const user = await getCurrentUser();
+  if (user) redirect(destination);
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
