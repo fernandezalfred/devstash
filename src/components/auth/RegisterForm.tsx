@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toast";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -38,9 +39,14 @@ export function RegisterForm() {
       return;
     }
 
-    // Account created — send the user to the "check your email" page so they
-    // know to click the verification link before signing in.
-    router.push(`/check-email?email=${encodeURIComponent(email)}`);
+    // Account created. If verification is required, send the user to the "check
+    // your email" page; otherwise they can sign in right away.
+    if (data?.data?.verificationRequired === false) {
+      toast("Account created! You can now sign in.");
+      router.push("/sign-in");
+    } else {
+      router.push(`/check-email?email=${encodeURIComponent(email)}`);
+    }
   }
 
   return (
