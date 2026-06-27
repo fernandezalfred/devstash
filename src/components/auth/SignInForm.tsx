@@ -7,6 +7,7 @@ import { signIn } from "next-auth/react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ResendVerificationForm } from "@/components/auth/ResendVerificationForm";
 import { safeCallbackUrl } from "@/lib/safe-callback-url";
 
 export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
@@ -16,11 +17,13 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [needsVerification, setNeedsVerification] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setNeedsVerification(false);
     setLoading(true);
 
     const res = await signIn("credentials", {
@@ -32,7 +35,14 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
     setLoading(false);
 
     if (res?.error) {
-      setError("Invalid email or password.");
+      // Valid credentials but unverified email — prompt to verify instead of
+      // showing a misleading "invalid credentials" message.
+      if (res.code === "email_not_verified") {
+        setNeedsVerification(true);
+        setError("Please verify your email before signing in.");
+      } else {
+        setError("Invalid email or password.");
+      }
       return;
     }
 
@@ -92,6 +102,8 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
           {loading ? "Signing in…" : "Sign in"}
         </Button>
       </form>
+
+      {needsVerification && <ResendVerificationForm email={email} />}
 
       <p className="text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}

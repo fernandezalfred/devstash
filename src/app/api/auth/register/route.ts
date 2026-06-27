@@ -3,6 +3,8 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 
 import { prisma } from "@/lib/prisma";
+import { sendVerificationEmail } from "@/lib/email";
+import { buildVerifyUrl, createVerificationToken } from "@/lib/verification";
 
 const RegisterSchema = z
   .object({
@@ -37,8 +39,25 @@ export async function POST(request: Request) {
 
   const passwordHash = await bcrypt.hash(password, 12);
   const user = await prisma.user.create({
-    data: { name, email, passwordHash, emailVerified: new Date() },
+    data: { name, email, passwordHash, emailVerified: null },
   });
+
+  // Send the verification email. A failure here doesn't fail registration —
+  // the account exists and the user can request a fresh link later.
+  try {
+    const token = await createVerificationToken(email);
+    const origin = new URL(request.url).origin;
+    const result = await sendVerificationEmail({
+      to: email,
+      name,
+      verifyUrl: buildVerifyUrl(origin, token),
+    });
+    if (!result.ok) {
+      console.error("Verification email not sent:", result.error);
+    }
+  } catch (err) {
+    console.error("Failed to send verification email", err);
+  }
 
   return NextResponse.json(
     { success: true, data: { id: user.id, email: user.email } },

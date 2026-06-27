@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { auth } from "@/auth";
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { getCurrentUser } from "@/lib/db/users";
 
 export default async function RegisterPage() {
-  // Already signed in — no need to register.
-  const session = await auth();
-  if (session?.user) redirect("/dashboard");
+  // Already signed in — no need to register. DB-backed (not just the JWT) so a
+  // stale session for a deleted user doesn't trigger a redirect loop.
+  const user = await getCurrentUser();
+  if (user) redirect("/dashboard");
 
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
