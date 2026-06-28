@@ -76,3 +76,54 @@ export async function sendVerificationEmail({
     return { ok: false, error: err instanceof Error ? err.message : "Send failed" };
   }
 }
+
+interface SendPasswordResetEmailParams {
+  to: string;
+  name: string | null;
+  resetUrl: string;
+}
+
+export async function sendPasswordResetEmail({
+  to,
+  name,
+  resetUrl,
+}: SendPasswordResetEmailParams): Promise<{ ok: boolean; error?: string }> {
+  const greeting = name ? `Hi ${escapeHtml(name)},` : "Hi,";
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; color: #0f172a;">
+      <h1 style="font-size: 20px; margin-bottom: 16px;">Reset your password</h1>
+      <p style="font-size: 14px; line-height: 1.6;">${greeting}</p>
+      <p style="font-size: 14px; line-height: 1.6;">
+        We received a request to reset your DevStash password. Click the button
+        below to choose a new one. This link expires in 1 hour.
+      </p>
+      <p style="margin: 24px 0;">
+        <a href="${resetUrl}" style="display: inline-block; background: #3b82f6; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600;">
+          Reset password
+        </a>
+      </p>
+      <p style="font-size: 13px; line-height: 1.6; color: #64748b;">
+        If the button doesn't work, copy and paste this link into your browser:<br />
+        <a href="${resetUrl}" style="color: #3b82f6; word-break: break-all;">${resetUrl}</a>
+      </p>
+      <p style="font-size: 13px; line-height: 1.6; color: #64748b;">
+        If you didn't request a password reset, you can safely ignore this email —
+        your password won't change.
+      </p>
+    </div>
+  `;
+
+  try {
+    const { error } = await getResend().emails.send({
+      from: EMAIL_FROM,
+      to,
+      subject: "Reset your DevStash password",
+      html,
+    });
+    if (error) return { ok: false, error: error.message };
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : "Send failed" };
+  }
+}
