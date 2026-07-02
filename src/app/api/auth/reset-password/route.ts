@@ -7,7 +7,10 @@ import { consumePasswordResetToken } from "@/lib/password-reset";
 
 const ResetPasswordSchema = z.object({
   token: z.string().min(1, "Missing reset token"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .max(72, "Password must be at most 72 characters"),
 });
 
 export async function POST(request: Request) {
