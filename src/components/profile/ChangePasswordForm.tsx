@@ -68,6 +68,7 @@ export function ChangePasswordForm() {
           autoComplete="new-password"
           required
           minLength={8}
+          maxLength={72}
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
         />
@@ -83,6 +84,7 @@ export function ChangePasswordForm() {
           autoComplete="new-password"
           required
           minLength={8}
+          maxLength={72}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
         />

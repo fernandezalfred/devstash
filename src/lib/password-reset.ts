@@ -48,9 +48,12 @@ export async function consumePasswordResetToken(
     return { status: "invalid" };
   }
 
-  await prisma.verificationToken.delete({
-    where: { identifier_token: { identifier: record.identifier, token } },
+  // deleteMany (not delete) so a concurrent request that already consumed this
+  // token doesn't throw Prisma P2025 — count 0 means it was used in the race.
+  const { count } = await prisma.verificationToken.deleteMany({
+    where: { identifier: record.identifier, token },
   });
+  if (count === 0) return { status: "invalid" };
 
   if (record.expires < new Date()) return { status: "expired" };
   return { status: "ok", email: record.identifier.slice(RESET_PREFIX.length) };

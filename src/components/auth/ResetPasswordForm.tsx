@@ -53,6 +53,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           autoComplete="new-password"
           required
           minLength={8}
+          maxLength={72}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
@@ -68,6 +69,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
           autoComplete="new-password"
           required
           minLength={8}
+          maxLength={72}
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
         />

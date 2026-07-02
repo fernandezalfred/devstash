@@ -5,7 +5,12 @@ import { auth } from "@/auth";
 export const proxy = auth((req) => {
   if (!req.auth) {
     const signInUrl = new URL("/sign-in", req.nextUrl.origin);
-    signInUrl.searchParams.set("callbackUrl", req.nextUrl.href);
+    // Use a relative path (not the absolute href) so safeCallbackUrl accepts it
+    // and the user returns to where they were headed after signing in.
+    signInUrl.searchParams.set(
+      "callbackUrl",
+      req.nextUrl.pathname + req.nextUrl.search,
+    );
     return Response.redirect(signInUrl);
   }
 });
