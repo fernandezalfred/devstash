@@ -32,6 +32,14 @@ export function ResetPasswordForm({ token }: { token: string }) {
     const data = await res.json().catch(() => null);
     setLoading(false);
 
+    if (res.status === 429) {
+      toast(
+        data?.error ?? "Too many attempts. Please try again later.",
+        "error",
+      );
+      return;
+    }
+
     if (!res.ok) {
       setError(data?.error ?? "Something went wrong. Please try again.");
       return;

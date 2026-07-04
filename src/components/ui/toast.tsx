@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle2, X } from "lucide-react";
+import { AlertCircle, CheckCircle2, X } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
-type ToastItem = { id: number; message: string };
+type ToastVariant = "success" | "error";
+type ToastItem = { id: number; message: string; variant: ToastVariant };
 
 // Module-level pub/sub so toast() can be called from anywhere and the single
 // <Toaster> in the root layout renders it. The Toaster persists across client
@@ -14,8 +15,8 @@ let counter = 0;
 const listeners = new Set<(t: ToastItem) => void>();
 const DURATION_MS = 5000;
 
-export function toast(message: string) {
-  const item: ToastItem = { id: ++counter, message };
+export function toast(message: string, variant: ToastVariant = "success") {
+  const item: ToastItem = { id: ++counter, message, variant };
   listeners.forEach((listener) => listener(item));
   return item.id;
 }
@@ -53,7 +54,11 @@ export function Toaster() {
             "animate-in slide-in-from-bottom-2 fade-in",
           )}
         >
-          <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+          {t.variant === "error" ? (
+            <AlertCircle className="size-4 shrink-0 text-destructive" />
+          ) : (
+            <CheckCircle2 className="size-4 shrink-0 text-emerald-500" />
+          )}
           <span className="flex-1">{t.message}</span>
           <button
             type="button"

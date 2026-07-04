@@ -8,6 +8,7 @@ import { signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ResendVerificationForm } from "@/components/auth/ResendVerificationForm";
+import { toast } from "@/components/ui/toast";
 import { safeCallbackUrl } from "@/lib/safe-callback-url";
 
 export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
@@ -40,6 +41,13 @@ export function SignInForm({ callbackUrl }: { callbackUrl: string }) {
       if (res.code === "email_not_verified") {
         setNeedsVerification(true);
         setError("Please verify your email before signing in.");
+      } else if (res.code?.startsWith("rate_limited")) {
+        // auth.ts packs the retry time into the code as `rate_limited_<minutes>`.
+        const minutes = res.code.match(/_(\d+)$/)?.[1];
+        const when = minutes
+          ? `in ${minutes} minute${minutes === "1" ? "" : "s"}`
+          : "later";
+        toast(`Too many sign-in attempts. Please try again ${when}.`, "error");
       } else {
         setError("Invalid email or password.");
       }
