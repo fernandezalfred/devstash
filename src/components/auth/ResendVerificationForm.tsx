@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toast";
 
 // When `email` is provided (e.g. right after registering) the form is just a
 // resend button. Otherwise it asks for the email first (used on the
@@ -15,12 +16,22 @@ export function ResendVerificationForm({ email: presetEmail }: { email?: string 
 
   async function resend(address: string) {
     setLoading(true);
-    await fetch("/api/auth/resend-verification", {
+    const res = await fetch("/api/auth/resend-verification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: address }),
     }).catch(() => null);
     setLoading(false);
+
+    if (res && res.status === 429) {
+      const data = await res.json().catch(() => null);
+      toast(
+        data?.error ?? "Too many attempts. Please try again later.",
+        "error",
+      );
+      return;
+    }
+
     // Generic confirmation regardless of whether the email exists.
     setSent(true);
   }

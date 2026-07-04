@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/toast";
 
 export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
@@ -13,12 +14,22 @@ export function ForgotPasswordForm() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    await fetch("/api/auth/forgot-password", {
+    const res = await fetch("/api/auth/forgot-password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     }).catch(() => null);
     setLoading(false);
+
+    if (res && res.status === 429) {
+      const data = await res.json().catch(() => null);
+      toast(
+        data?.error ?? "Too many attempts. Please try again later.",
+        "error",
+      );
+      return;
+    }
+
     // Generic confirmation regardless of whether the email exists.
     setSent(true);
   }

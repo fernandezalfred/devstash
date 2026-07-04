@@ -4,12 +4,19 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { sendPasswordResetEmail } from "@/lib/email";
 import { buildResetUrl, createPasswordResetToken } from "@/lib/password-reset";
+import { checkRateLimit, getClientIp, tooManyRequests } from "@/lib/rate-limit";
 
 const ForgotPasswordSchema = z.object({
   email: z.string().trim().toLowerCase().email("Invalid email address"),
 });
 
 export async function POST(request: Request) {
+  const { success, reset } = await checkRateLimit(
+    "forgotPassword",
+    getClientIp(request),
+  );
+  if (!success) return tooManyRequests(reset);
+
   const body = await request.json().catch(() => null);
 
   const parsed = ForgotPasswordSchema.safeParse(body);
