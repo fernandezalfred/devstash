@@ -128,6 +128,44 @@ export async function getSidebarItemTypes(): Promise<SidebarItemType[]> {
     }));
 }
 
+export interface ItemsByType {
+  // The resolved system item type for the slug, or null when the slug doesn't
+  // map to a system type (the page renders a 404 in that case).
+  type: SidebarItemType | null;
+  items: DashboardItem[];
+}
+
+// Items of a single system type for the demo user, most recently updated first,
+// plus the resolved type metadata. `slug` is the plural route slug ("snippets").
+export async function getItemsByType(slug: string): Promise<ItemsByType> {
+  // Route slugs are the pluralized type name; system type names are lowercase
+  // singular ("snippet"). Strip the trailing "s" to recover the type name.
+  const name = slug.replace(/s$/, "");
+
+  const itemType = await prisma.itemType.findFirst({
+    where: { name, isSystem: true, userId: null },
+  });
+  if (!itemType) return { type: null, items: [] };
+
+  const items = await prisma.item.findMany({
+    where: { user: { email: DEMO_USER_EMAIL }, itemTypeId: itemType.id },
+    orderBy: { updatedAt: "desc" },
+    include: itemInclude,
+  });
+
+  return {
+    type: {
+      id: itemType.id,
+      name: itemType.name.charAt(0).toUpperCase() + itemType.name.slice(1),
+      slug: `${itemType.name}s`,
+      icon: itemType.icon,
+      color: itemType.color,
+      itemCount: items.length,
+    },
+    items: items.map(toDashboardItem),
+  };
+}
+
 export interface DashboardItemStats {
   items: number;
   favoriteItems: number;

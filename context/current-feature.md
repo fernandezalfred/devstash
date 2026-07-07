@@ -1,16 +1,24 @@
-# Current Feature
+# Current Feature: Items List View
 
 ## status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Add a dynamic route `/items/[type]` that displays type-filtered items (e.g. `/items/snippets`, `/items/notes`)
+- Fetch and display items filtered by the item type in the URL
+- Render items in a responsive grid of `ItemCard` components (two columns on medium screens and up)
+- Each card shows a left border colored by its item type
+- Follow existing codebase patterns
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec: `context/features/item-list-view-spec.md`
+- Sidebar Types already link to `/items/[slug]` (e.g. `snippets`, `prompts`, `commands`, `notes`, `links`, `files`, `images`) — this route is the destination those links currently 404 to.
+- Type slugs are plural; existing DB helpers derive a per-item type slug already (see `src/lib/db/items.ts` `DashboardItem`).
+- An `ItemCard` component may not exist yet — the dashboard currently uses `ItemRow`. Confirm during `start` whether to build a new `ItemCard` or adapt existing patterns.
+- Data layer is still demo-user-scoped until auth is wired into the dashboard/items queries; follow the same scoping the sidebar/dashboard use.
 
 ## History
 

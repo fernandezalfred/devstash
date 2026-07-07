@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 
-// Protect /dashboard/* and /profile/* — redirect unauthenticated users to the
-// custom sign-in page (Phase 3), preserving where they were headed via callbackUrl.
+// Protect /dashboard/*, /items/* and /profile/* — redirect unauthenticated users
+// to the custom sign-in page (Phase 3), preserving where they were headed via callbackUrl.
 export const proxy = auth((req) => {
   if (!req.auth) {
     const signInUrl = new URL("/sign-in", req.nextUrl.origin);
@@ -16,5 +16,5 @@ export const proxy = auth((req) => {
 });
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/profile/:path*"],
+  matcher: ["/dashboard/:path*", "/items/:path*", "/profile/:path*"],
 };
