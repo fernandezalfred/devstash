@@ -192,25 +192,35 @@ export interface ItemDetail {
   updatedAt: string; // ISO date
 }
 
-// Full detail for a single item, demo-user-scoped to match the list views
-// (getPinnedItems / getRecentItems / getItemsByType). Returns null when the item
-// doesn't exist under the demo user, so the API route can 404. Swap to the
-// authenticated session user once the rest of the data layer moves off the demo
-// user — until then, scoping to the session user here would 404 every card,
-// since the lists show demo items regardless of who is signed in.
-export async function getItemDetail(id: string): Promise<ItemDetail | null> {
-  const item = await prisma.item.findFirst({
-    where: { id, user: { email: DEMO_USER_EMAIL } },
-    include: {
-      itemType: { select: { name: true, icon: true, color: true } },
-      tags: { select: { name: true } },
-      collections: {
-        include: { collection: { select: { id: true, name: true } } },
-      },
-    },
-  });
-  if (!item) return null;
+// Relations needed to build an ItemDetail. Shared by getItemDetail and
+// updateItem so both return the same shape.
+const itemDetailInclude = {
+  itemType: { select: { name: true, icon: true, color: true } },
+  tags: { select: { name: true } },
+  collections: {
+    include: { collection: { select: { id: true, name: true } } },
+  },
+} as const;
 
+type ItemWithDetail = {
+  id: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  url: string | null;
+  fileName: string | null;
+  language: string | null;
+  contentType: "TEXT" | "FILE";
+  isPinned: boolean;
+  isFavorite: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  itemType: { name: string; icon: string; color: string };
+  tags: { name: string }[];
+  collections: { collection: { id: string; name: string } }[];
+};
+
+function toItemDetail(item: ItemWithDetail): ItemDetail {
   return {
     id: item.id,
     title: item.title,
@@ -237,6 +247,68 @@ export async function getItemDetail(id: string): Promise<ItemDetail | null> {
     createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };
+}
+
+// Full detail for a single item, demo-user-scoped to match the list views
+// (getPinnedItems / getRecentItems / getItemsByType). Returns null when the item
+// doesn't exist under the demo user, so the API route can 404. Swap to the
+// authenticated session user once the rest of the data layer moves off the demo
+// user — until then, scoping to the session user here would 404 every card,
+// since the lists show demo items regardless of who is signed in.
+export async function getItemDetail(id: string): Promise<ItemDetail | null> {
+  const item = await prisma.item.findFirst({
+    where: { id, user: { email: DEMO_USER_EMAIL } },
+    include: itemDetailInclude,
+  });
+  if (!item) return null;
+  return toItemDetail(item);
+}
+
+// Fields an item edit can change. Type-specific fields (content/language/url)
+// are always present in the payload but null for types that don't use them.
+export interface UpdateItemData {
+  title: string;
+  description: string | null;
+  content: string | null;
+  url: string | null;
+  language: string | null;
+  tags: string[];
+}
+
+// Update an item and return its fresh ItemDetail (so the drawer can refresh
+// without a second fetch), or null when the item isn't found under the demo
+// user. Demo-user-scoped to match getItemDetail — the calling server action
+// still requires an authenticated session. Tags are replaced wholesale:
+// disconnect all, then connect-or-create by unique name.
+export async function updateItem(
+  id: string,
+  data: UpdateItemData,
+): Promise<ItemDetail | null> {
+  const existing = await prisma.item.findFirst({
+    where: { id, user: { email: DEMO_USER_EMAIL } },
+    select: { id: true },
+  });
+  if (!existing) return null;
+
+  const item = await prisma.item.update({
+    where: { id },
+    data: {
+      title: data.title,
+      description: data.description,
+      content: data.content,
+      url: data.url,
+      language: data.language,
+      tags: {
+        set: [],
+        connectOrCreate: data.tags.map((name) => ({
+          where: { name },
+          create: { name },
+        })),
+      },
+    },
+    include: itemDetailInclude,
+  });
+  return toItemDetail(item);
 }
 
 export interface DashboardItemStats {
