@@ -1,16 +1,19 @@
-# Current Feature
+# Current Feature: Three-column items grid
 
 ## status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- The items listing view at `/items/[type]` shows a **three-column** grid on larger screens instead of the current two.
+- Layout stays fully responsive: single column on small screens, scaling up to three columns on large viewports (no horizontal overflow, cards keep their look).
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Current grid lives in `src/app/items/[type]/page.tsx` (`grid grid-cols-1 gap-3 md:grid-cols-2`). Change the large-breakpoint column count to 3 (e.g. `md:grid-cols-2 lg:grid-cols-3`), keeping the small-screen single-column and intermediate two-column steps.
+- `ItemCard` (`src/components/items/ItemCard.tsx`) already `line-clamp`s and wraps content, so narrower cards should render fine — verify in the browser.
+- Pure presentational/Tailwind change; no DB, server-action, or utility logic touched, so no new unit tests are expected. Verify responsiveness in the browser.
 
 ## History
 
