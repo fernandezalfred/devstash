@@ -1,16 +1,28 @@
-# Current Feature
+# Current Feature: Item Drawer — Edit Mode
 
 ## status
 
-Completed
+Not Started
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Clicking **Edit** (pencil) in the item drawer's action bar switches the same open drawer from view mode to **inline edit mode** — fields become editable inputs, no navigation.
+- In edit mode the action bar is replaced by **Save** and **Cancel**. Cancel discards and returns to view mode; Save persists via a server action, returns to view mode, and refreshes the drawer with the updated data.
+- **Toast** on save success and on error.
+- Editable fields — all types: **Title** (text, required), **Description** (textarea, optional), **Tags** (comma-separated text ↔ array). Type-specific: **Content** (textarea) for snippet/prompt/command/note; **Language** (text) for snippet/command; **URL** (text) for link.
+- Display-only in edit mode: item **type**, **Collections** (managed separately later), **Created/Updated**.
+- Save button disabled client-side while title is empty; Zod is the server-side source of truth.
+- After save, `router.refresh()` so the underlying card list reflects the changes.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- **Spec:** `context/features/item-drawer-edit-spec.md`.
+- **First server action in the repo** — `src/actions/` does not exist yet (every mutation so far is an API route). Create `src/actions/items.ts` with `"use server"`; this sets the pattern coding-standards already prescribes (`{ success, data, error }` return). It'll also be the first thing under `src/actions` for the (unmerged) Vitest scope.
+- **Server action `updateItem(itemId, data)`**: Zod-validate first, `auth()` for session, then call the `updateItem` query in `src/lib/db/items.ts`. Zod: `title` non-empty trimmed; `description`/`content`/`language` string|null optional; `url` valid-URL|null optional; `tags` array of trimmed non-empty strings. Return Zod errors inside `{ success:false, error }` for the client to show. (Verify Zod v4 URL API — `z.url()` vs `z.string().url()` — via Context7 at `start`; repo is on `zod@^4.4.3`.)
+- **Query `updateItem` in `lib/db/items.ts`**: tags = disconnect all existing, connect-or-create by name (`Tag.name` is `@unique`, M:N via the `ItemTags` relation). Return the updated `ItemDetail` so the drawer refreshes without a second fetch.
+- **Scoping (confirm at `start`):** the spec says the action "validates ownership," but items are demo-user-owned while the signed-in user owns 0 (the same tension the read path hit). To match `getItemDetail` (which we demo-scoped so cards resolve), the `updateItem` query should be **demo-scoped** too, keeping the `auth()` "must be signed in" gate — otherwise every edit fails ownership for the current account. Flip both to the real session user together when the data layer moves off demo-scoping.
+- **UI:** extend `src/components/items/ItemDrawer.tsx` (`ItemDrawerBody`) — the Edit `ActionButton` currently non-wired becomes the mode toggle; add an edit form with controlled local state (no form library per spec). Content textarea is a plain textarea (code editor comes later). `router.refresh()` via `useRouter` (pattern already used in the auth forms).
+- **Testing:** the Zod schema + `updateItem` action/query are unit-testable, but Vitest lives on the unmerged `chore/vitest-setup` branch, so `npm test` isn't available on a branch off `main` — same situation as the drawer; add tests when that branch lands. Drawer UI verified in the browser.
 
 ## History
 
