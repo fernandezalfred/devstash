@@ -1,6 +1,8 @@
-import Link from "next/link";
+"use client";
+
 import { Pin, Star } from "lucide-react";
 
+import { useItemDrawer } from "@/components/items/ItemDrawer";
 import { type DashboardItem } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
 
@@ -16,11 +18,13 @@ function formatItemDate(iso: string): string {
 export function ItemCard({ item }: { item: DashboardItem }) {
   const Icon = itemTypeIcons[item.typeIcon];
   const accent = item.typeColor;
+  const { open } = useItemDrawer();
 
   return (
-    <Link
-      href={`/items/${item.slug}`}
-      className="flex h-full flex-col gap-3 rounded-lg border border-l-4 border-border bg-card p-4 transition-colors hover:border-foreground/20"
+    <button
+      type="button"
+      onClick={() => open(item.id)}
+      className="flex h-full flex-col gap-3 rounded-lg border border-l-4 border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
       style={{ borderLeftColor: accent }}
     >
       <div className="flex items-start gap-3">
@@ -62,6 +66,6 @@ export function ItemCard({ item }: { item: DashboardItem }) {
           ))}
         </div>
       )}
-    </Link>
+    </button>
   );
 }

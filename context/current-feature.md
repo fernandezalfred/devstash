@@ -1,16 +1,25 @@
-# Current Feature
+# Current Feature: Item Detail Drawer
 
 ## status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Clicking an `ItemCard` opens a right-side slide-in drawer showing that item's full detail — this **is** the item detail view (no separate item page).
+- Works on both the dashboard and the `/items/[type]` list pages.
+- Drawer content (top → bottom, per `dashboard-ui-drawer.png`): header (type icon chip + title, type badge + language badge, close ✕); an **action bar** — Favorite (star, yellow when active), Pin, Copy on the left, Edit (pencil) + Delete (trash, red) right-aligned; then Description, Content (code block w/ line numbers for text types), Tags, Collections, and a Details section (Created / Updated dates).
+- Feels snappy: fetch full detail on click (no page navigation), with a skeleton/loading state while fetching.
+- Action buttons can be present but non-wired for now — this pass is the **detail display** only.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- **Spec:** `context/features/item-drawer-spec.md`; visual reference `context/screenshots/dashboard-ui-drawer.png`.
+- Use the **shadcn Sheet** (radix Dialog based), opening from the right. Sheet is **not installed yet** (`src/components/ui/` has alert-dialog, avatar, button, dropdown-menu, input, toast) — add it following the existing radix-primitive pattern used by `alert-dialog.tsx`/`dropdown-menu.tsx`.
+- **Two-tier data fetching:** card data (title, description, tags…) stays server-fetched as today; full detail (content, collections, language, createdAt/updatedAt…) is fetched **on click** via a new API route `GET /api/items/[id]`. The query function lives in `src/lib/db/items.ts` (new, e.g. `getItemDetail(id)`) and the route calls it **with an auth check** (session-scoped; note the rest of the data layer is still demo-user-scoped — confirm scoping during `start`).
+- **Client wrapper needed:** dashboard + items pages are server components, so drawer open/selected-item state lives in a new client component that wraps the card grids and manages the Sheet. `ItemCard` is currently a `<Link href={/items/${slug}}>` (placeholder nav) — this replaces that navigation with a click that opens the drawer (thread an `onClick`/selection up to the wrapper).
+- Content rendering: text types show a syntax-highlighted, line-numbered code block (screenshot shows a `snippet`); pick a lightweight approach and keep the code-editor/type-specific extras out of scope (explicitly deferred by the spec).
+- Testing scope: the new `getItemDetail` util + the API route's auth/validation are unit-testable (`src/lib/`, and route logic) — the Sheet/drawer UI is verified in the browser, not unit-tested.
 
 ## History
 

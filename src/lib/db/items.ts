@@ -166,6 +166,79 @@ export async function getItemsByType(slug: string): Promise<ItemsByType> {
   };
 }
 
+// Full detail for a single item, loaded on demand when the drawer opens.
+// Extends the card-level fields with content, url, language, collections, and
+// timestamps that the list views don't need.
+export interface ItemDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  url: string | null;
+  fileName: string | null;
+  language: string | null;
+  contentType: "TEXT" | "FILE";
+  isPinned: boolean;
+  isFavorite: boolean;
+  type: {
+    name: string; // display singular, e.g. "Snippet"
+    icon: string; // lucide icon name
+    color: string; // hex
+    slug: string; // route slug, e.g. "snippets"
+  };
+  tags: string[];
+  collections: { id: string; name: string }[];
+  createdAt: string; // ISO date
+  updatedAt: string; // ISO date
+}
+
+// Full detail for a single item, demo-user-scoped to match the list views
+// (getPinnedItems / getRecentItems / getItemsByType). Returns null when the item
+// doesn't exist under the demo user, so the API route can 404. Swap to the
+// authenticated session user once the rest of the data layer moves off the demo
+// user — until then, scoping to the session user here would 404 every card,
+// since the lists show demo items regardless of who is signed in.
+export async function getItemDetail(id: string): Promise<ItemDetail | null> {
+  const item = await prisma.item.findFirst({
+    where: { id, user: { email: DEMO_USER_EMAIL } },
+    include: {
+      itemType: { select: { name: true, icon: true, color: true } },
+      tags: { select: { name: true } },
+      collections: {
+        include: { collection: { select: { id: true, name: true } } },
+      },
+    },
+  });
+  if (!item) return null;
+
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.description,
+    content: item.content,
+    url: item.url,
+    fileName: item.fileName,
+    language: item.language,
+    contentType: item.contentType,
+    isPinned: item.isPinned,
+    isFavorite: item.isFavorite,
+    type: {
+      name:
+        item.itemType.name.charAt(0).toUpperCase() + item.itemType.name.slice(1),
+      icon: item.itemType.icon,
+      color: item.itemType.color,
+      slug: `${item.itemType.name}s`,
+    },
+    tags: item.tags.map((tag) => tag.name),
+    collections: item.collections.map((ic) => ({
+      id: ic.collection.id,
+      name: ic.collection.name,
+    })),
+    createdAt: item.createdAt.toISOString(),
+    updatedAt: item.updatedAt.toISOString(),
+  };
+}
+
 export interface DashboardItemStats {
   items: number;
   favoriteItems: number;

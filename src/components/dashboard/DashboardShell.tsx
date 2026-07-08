@@ -4,6 +4,7 @@ import { useState } from "react";
 
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
+import { ItemDrawerProvider } from "@/components/items/ItemDrawer";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { type DashboardCollection } from "@/lib/db/collections";
 import { type SidebarItemType } from "@/lib/db/items";
@@ -65,7 +66,9 @@ export function DashboardShell({
           <Sidebar itemTypes={itemTypes} collections={collections} user={user} />
         </div>
 
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6">
+          <ItemDrawerProvider>{children}</ItemDrawerProvider>
+        </main>
       </div>
     </div>
   );
