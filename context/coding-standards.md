@@ -89,6 +89,14 @@ Example v4 configuration:
 - Return `{ success, data, error }` pattern from actions
 - Display user-friendly error messages via toast
 
+## Testing
+
+- **Vitest** for unit tests, running in a Node environment (no DOM/jsdom).
+- Scope: **server actions (`src/actions`) and utilities (`src/lib`) only** — do NOT unit test React components. `vitest.config.ts` restricts the test run to those two trees; verify components in the browser instead.
+- Colocate tests next to the code they cover as `*.test.ts` (e.g. `src/lib/safe-callback-url.test.ts`).
+- Prefer testing pure logic directly; mock external services (Prisma, Redis, Resend) at the module boundary when needed.
+- Run `npm test` (single run) or `npm run test:watch` (watch mode). Tests must pass before committing.
+
 ## Code Quality
 
 - No commented-out code unless specified

@@ -17,6 +17,7 @@ Read the following to get the full context of the project:
 - **Build**: `npm run build`
 - **Production server**: `npm run start`
 - **Lint**: `npm run lint`
+- **Test**: `npm test` (Vitest, single run) / `npm run test:watch` (watch mode). Covers server actions (`src/actions`) and utilities (`src/lib`) only — not components.
 
 **NEVER** run any query, migration, or change against the `production` branch
 (id: `br-old-field-atzbvmes`, the default/primary branch) unless I explicitly say
