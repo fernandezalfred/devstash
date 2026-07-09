@@ -35,7 +35,7 @@ export function DashboardShell({
 
   return (
     <div className="flex h-screen flex-col">
-      <TopBar onToggleSidebar={toggle} />
+      <TopBar onToggleSidebar={toggle} itemTypes={itemTypes} />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop: inline collapsible sidebar */}

@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { deleteItem, updateItem } from "@/actions/items";
+import { createItem, deleteItem, updateItem } from "@/actions/items";
 import { auth } from "@/auth";
 import {
+  createItem as createItemQuery,
   deleteItem as deleteItemQuery,
   updateItem as updateItemQuery,
 } from "@/lib/db/items";
@@ -14,11 +15,13 @@ vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("@/lib/db/items", () => ({
   updateItem: vi.fn(),
   deleteItem: vi.fn(),
+  createItem: vi.fn(),
 }));
 
 const mockedAuth = vi.mocked(auth);
 const mockedQuery = vi.mocked(updateItemQuery);
 const mockedDeleteQuery = vi.mocked(deleteItemQuery);
+const mockedCreateQuery = vi.mocked(createItemQuery);
 
 // A minimal ItemDetail the query can echo back on success.
 const fakeItem = {
@@ -53,7 +56,16 @@ beforeEach(() => {
   mockedAuth.mockResolvedValue({ user: { id: "user-1" } } as never);
   mockedQuery.mockResolvedValue(fakeItem);
   mockedDeleteQuery.mockResolvedValue(true);
+  mockedCreateQuery.mockResolvedValue(fakeItem);
 });
+
+const validCreate = {
+  type: "snippet" as const,
+  title: "New snippet",
+  content: "code",
+  language: "ts",
+  tags: ["x"],
+};
 
 describe("updateItem action — auth", () => {
   it("rejects when there is no session", async () => {
@@ -176,6 +188,76 @@ describe("deleteItem action", () => {
     expect(result).toEqual({
       success: false,
       error: "Could not delete the item. Please try again.",
+    });
+  });
+});
+
+describe("createItem action", () => {
+  it("rejects when there is no session", async () => {
+    mockedAuth.mockResolvedValue(null as never);
+    const result = await createItem(validCreate);
+    expect(result).toEqual({
+      success: false,
+      error: "You must be signed in to create items.",
+    });
+    expect(mockedCreateQuery).not.toHaveBeenCalled();
+  });
+
+  it("rejects an empty title", async () => {
+    const result = await createItem({ ...validCreate, title: "  " });
+    expect(result).toEqual({ success: false, error: "Title is required" });
+    expect(mockedCreateQuery).not.toHaveBeenCalled();
+  });
+
+  it("requires a URL for the link type", async () => {
+    const result = await createItem({ type: "link", title: "A link", tags: [] });
+    expect(result).toEqual({ success: false, error: "URL is required" });
+    expect(mockedCreateQuery).not.toHaveBeenCalled();
+  });
+
+  it("rejects an invalid URL for the link type", async () => {
+    const result = await createItem({
+      type: "link",
+      title: "A link",
+      url: "nope",
+      tags: [],
+    });
+    expect(result).toEqual({ success: false, error: "Enter a valid URL" });
+  });
+
+  it("accepts a valid link and forwards it to the query", async () => {
+    const result = await createItem({
+      type: "link",
+      title: "A link",
+      url: "https://example.com",
+      tags: [],
+    });
+    expect(result.success).toBe(true);
+    expect(mockedCreateQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "link", url: "https://example.com" }),
+    );
+  });
+
+  it("creates a non-link item without a URL", async () => {
+    const result = await createItem(validCreate);
+    expect(result).toEqual({ success: true, data: fakeItem });
+    expect(mockedCreateQuery).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "snippet", url: null }),
+    );
+  });
+
+  it("returns an error when the query can't resolve the type", async () => {
+    mockedCreateQuery.mockResolvedValue(null);
+    const result = await createItem(validCreate);
+    expect(result).toEqual({ success: false, error: "Invalid item type." });
+  });
+
+  it("returns a friendly error when the query throws", async () => {
+    mockedCreateQuery.mockRejectedValue(new Error("db down"));
+    const result = await createItem(validCreate);
+    expect(result).toEqual({
+      success: false,
+      error: "Could not create the item. Please try again.",
     });
   });
 });

@@ -327,6 +327,60 @@ export async function deleteItem(id: string): Promise<boolean> {
   return true;
 }
 
+// Fields for creating an item. `type` is the system item type name (lowercase
+// singular, e.g. "snippet"). All five creatable types are TEXT-kind; link
+// stores its `url` with null content.
+export interface CreateItemData {
+  type: string;
+  title: string;
+  description: string | null;
+  content: string | null;
+  url: string | null;
+  language: string | null;
+  tags: string[];
+}
+
+// Create an item under the demo user and return its ItemDetail, or null when
+// `type` isn't a system type. Demo-user-scoped to match the rest of the layer —
+// the calling action still requires an authenticated session. Tags are
+// connect-or-created by unique name.
+export async function createItem(
+  data: CreateItemData,
+): Promise<ItemDetail | null> {
+  const itemType = await prisma.itemType.findFirst({
+    where: { name: data.type, isSystem: true, userId: null },
+    select: { id: true },
+  });
+  if (!itemType) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { email: DEMO_USER_EMAIL },
+    select: { id: true },
+  });
+  if (!user) return null;
+
+  const item = await prisma.item.create({
+    data: {
+      title: data.title,
+      description: data.description,
+      content: data.content,
+      url: data.url,
+      language: data.language,
+      contentType: "TEXT",
+      userId: user.id,
+      itemTypeId: itemType.id,
+      tags: {
+        connectOrCreate: data.tags.map((name) => ({
+          where: { name },
+          create: { name },
+        })),
+      },
+    },
+    include: itemDetailInclude,
+  });
+  return toItemDetail(item);
+}
+
 export interface DashboardItemStats {
   items: number;
   favoriteItems: number;
