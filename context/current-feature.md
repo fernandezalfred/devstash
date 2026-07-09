@@ -1,16 +1,27 @@
-# Current Feature
+# Current Feature: Code Editor (Monaco) for snippets & commands
 
 ## status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Create a reusable `CodeEditor` component built on Monaco Editor with a dark theme.
+- Use `CodeEditor` in place of the plain `Textarea` for the content field of **snippet** and **command** types only.
+- Keep the existing `Textarea` for notes, prompts, and all other non-code types.
+- Add macOS-style window dots (red / yellow / green) at the top of the editor.
+- Add a quick copy button in the editor header.
+- Show the item's language in the editor header, next to the copy button.
+- Support both display (read-only) and edit modes.
+- Fluid editor height with a 400px max height, and a themed scrollbar that matches the app's dark UI.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec source: `context/features/code-editor-spec.md`.
+- Affected surfaces: the item detail drawer's Content section (display/read-only) and its edit form (`src/components/items/ItemDrawer.tsx`), plus the create-item modal Content field (`CreateItemDialog`) — all currently render a plain `<pre>`/`Textarea`. Only snippet & command swap to Monaco; prompt/note keep the textarea.
+- Type-gating already exists in the drawer/create UIs (Content shown for snippet/prompt/command/note; Language for snippet/command) — reuse it so Monaco only mounts for snippet & command.
+- Monaco is a new dependency: fetch current `@monaco-editor/react` / `monaco-editor` docs via Context7 at implementation time; watch Next.js 16 / React 19 SSR (dynamic import, `"use client"`).
+- No DB/schema change expected (purely a content-field UI swap); components aren't unit-tested — verify in the browser. Re-seed the dev DB afterward if any test items are created.
 
 ## History
 

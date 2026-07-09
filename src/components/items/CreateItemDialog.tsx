@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { Loader2, Plus } from "lucide-react";
 
 import { createItem } from "@/actions/items";
+import {
+  CodeEditor,
+  codeFallbackLanguage,
+  isCodeEditorType,
+} from "@/components/items/CodeEditor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -33,14 +38,27 @@ function emptyForm(type: string) {
   };
 }
 
-// "New Item" modal. The top-bar button is its trigger. Fields are gated by the
-// selected type (mirrors the drawer edit form); submit runs the createItem
-// server action, then closes + refreshes so the item appears in the lists.
-export function CreateItemDialog({ types }: { types: SidebarItemType[] }) {
+// "New Item" modal. Fields are gated by the selected type (mirrors the drawer
+// edit form); submit runs the createItem server action, then closes + refreshes
+// so the item appears in the lists. `initialType` preselects a type in the
+// picker (e.g. from a type page); `triggerLabel` customizes the trigger button.
+export function CreateItemDialog({
+  types,
+  initialType,
+  triggerLabel = "New Item",
+}: {
+  types: SidebarItemType[];
+  initialType?: string;
+  triggerLabel?: string;
+}) {
   const router = useRouter();
-  const defaultType = types[0]?.name.toLowerCase() ?? "snippet";
+  const creatableValues = types.map((type) => type.name.toLowerCase());
+  const startType =
+    initialType && creatableValues.includes(initialType)
+      ? initialType
+      : (creatableValues[0] ?? "snippet");
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState(() => emptyForm(defaultType));
+  const [form, setForm] = useState(() => emptyForm(startType));
   const [submitting, setSubmitting] = useState(false);
 
   const set = <K extends keyof ReturnType<typeof emptyForm>>(
@@ -90,14 +108,14 @@ export function CreateItemDialog({ types }: { types: SidebarItemType[] }) {
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        // Reset to a fresh form whenever the dialog closes.
-        if (!next) setForm(emptyForm(defaultType));
+        // Reset to a fresh form (keeping the preselected type) whenever it closes.
+        if (!next) setForm(emptyForm(startType));
       }}
     >
       <DialogTrigger asChild>
         <Button size="sm">
           <Plus className="size-4" />
-          <span className="hidden sm:inline">New Item</span>
+          <span className="hidden sm:inline">{triggerLabel}</span>
         </Button>
       </DialogTrigger>
 
@@ -152,11 +170,20 @@ export function CreateItemDialog({ types }: { types: SidebarItemType[] }) {
 
           {showContent && (
             <Field label="Content">
-              <textarea
-                className={cn(inputClass, "min-h-32 resize-y font-mono")}
-                value={form.content}
-                onChange={(e) => set("content", e.target.value)}
-              />
+              {isCodeEditorType(form.type) ? (
+                <CodeEditor
+                  value={form.content}
+                  onChange={(v) => set("content", v)}
+                  language={form.language}
+                  fallbackLanguage={codeFallbackLanguage(form.type)}
+                />
+              ) : (
+                <textarea
+                  className={cn(inputClass, "min-h-32 resize-y font-mono")}
+                  value={form.content}
+                  onChange={(e) => set("content", e.target.value)}
+                />
+              )}
             </Field>
           )}
 

@@ -22,6 +22,11 @@ import {
 
 import { deleteItem, updateItem } from "@/actions/items";
 import {
+  CodeEditor,
+  codeFallbackLanguage,
+  isCodeEditorType,
+} from "@/components/items/CodeEditor";
+import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
@@ -149,6 +154,7 @@ function ItemDrawerBody({
 }) {
   const Icon = itemTypeIcons[item.type.icon];
   const accent = item.type.color;
+  const typeName = item.type.name.toLowerCase();
   const [editing, setEditing] = useState(false);
 
   if (editing) {
@@ -226,7 +232,15 @@ function ItemDrawerBody({
 
         {item.contentType === "TEXT" && item.content && (
           <Section label="Content">
-            <CodeBlock content={item.content} />
+            {isCodeEditorType(typeName) ? (
+              <CodeEditor
+                value={item.content}
+                language={item.language}
+                fallbackLanguage={codeFallbackLanguage(typeName)}
+              />
+            ) : (
+              <CodeBlock content={item.content} />
+            )}
           </Section>
         )}
 
@@ -589,11 +603,20 @@ function ItemEditForm({
 
         {showContent && (
           <Field label="Content">
-            <textarea
-              className={cn(inputClass, "min-h-40 resize-y font-mono")}
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-            />
+            {isCodeEditorType(typeName) ? (
+              <CodeEditor
+                value={content}
+                onChange={setContent}
+                language={language}
+                fallbackLanguage={codeFallbackLanguage(typeName)}
+              />
+            ) : (
+              <textarea
+                className={cn(inputClass, "min-h-40 resize-y font-mono")}
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+              />
+            )}
           </Field>
         )}
 
