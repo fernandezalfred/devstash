@@ -311,6 +311,22 @@ export async function updateItem(
   return toItemDetail(item);
 }
 
+// Delete an item, demo-user-scoped (matching getItemDetail/updateItem — the
+// calling action still requires an authenticated session). Returns false when
+// the item isn't found under the demo user so the action can report not-found.
+// ItemCollection join rows drop via onDelete: Cascade and the implicit ItemTags
+// join rows are removed by Prisma; shared Tag rows are left intact.
+export async function deleteItem(id: string): Promise<boolean> {
+  const existing = await prisma.item.findFirst({
+    where: { id, user: { email: DEMO_USER_EMAIL } },
+    select: { id: true },
+  });
+  if (!existing) return false;
+
+  await prisma.item.delete({ where: { id } });
+  return true;
+}
+
 export interface DashboardItemStats {
   items: number;
   favoriteItems: number;

@@ -1,16 +1,25 @@
-# Current Feature
+# Current Feature: Delete Item
 
 ## status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Wire up the **Delete** action (trash icon) in the item drawer's action bar — currently rendered but non-functional.
+- Clicking Delete opens a **shadcn AlertDialog** confirmation ("Delete this item? This can't be undone.") with Cancel / Delete buttons; nothing is deleted until the user confirms.
+- Confirming deletes the item, shows a **success toast** ("Item deleted."), closes the drawer, and refreshes the underlying card lists (`router.refresh()`) so the item disappears.
+- Errors surface as an error toast; the dialog/drawer stay put on failure.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- **Inline spec** (no spec file): "create the delete functionality for items. There should be a shadcn UI confirmation and a toast on success."
+- **Server action** `deleteItem(itemId)` added to the existing `src/actions/items.ts` (alongside `updateItem`): `auth()` gate → call a new demo-scoped `deleteItem` query → return `{ success, error }`. Follows the same pattern/scoping as `updateItem` (keep the auth gate; scope the query to the demo user so it matches `getItemDetail`/`updateItem`, since the signed-in account owns 0 items).
+- **Query** `deleteItem(id)` in `src/lib/db/items.ts`: demo-scoped ownership check (findFirst by `{ id, user.email }`) then `prisma.item.delete`. Cascades: `ItemCollection` join rows drop via `onDelete: Cascade`; the implicit M:N `ItemTags` join rows are removed automatically by Prisma; `Tag` rows themselves persist (shared, fine). Return a boolean/`{ ok }` so the action can 404 vs succeed.
+- **UI:** the `AlertDialog` primitive already exists (`src/components/ui/alert-dialog.tsx`, exports Trigger/Content/Title/Description/Action/Cancel) and there's a working reference in `src/components/profile/DeleteAccountDialog.tsx` (controlled `open` state, destructive confirm, toast on success) — mirror it, but **without** the type-to-confirm gate (a simple confirm is enough for an item). Wire the existing Delete `ActionButton` in `src/components/items/ItemDrawer.tsx` to open the dialog.
+- **Drawer close on success:** the drawer's open state lives in `ItemDrawerProvider` (`setOpenId(null)` closes it). Thread a close callback down to `ItemDrawerBody`/the delete dialog so a successful delete closes the drawer (then `router.refresh()`).
+- **Testing:** unit-test `deleteItem` action like `updateItem` (auth gate, not-found → error, success, thrown-error → friendly message) by mocking `@/auth` + the DB query. Vitest is now on `main`, so `npm test` is available on this branch from the start.
+- Consistent with the app: delete is **demo-scoped** for now; flips to the real session user when the data layer de-demos. Re-seed the dev DB after browser-testing a real delete (it removes a seeded item).
 
 ## History
 
