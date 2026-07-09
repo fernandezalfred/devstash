@@ -1,16 +1,27 @@
-# Current Feature
+# Current Feature: Item Create
 
 ## status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- A **"New Item"** button in the top bar (currently disabled) opens a **shadcn Dialog** modal for creating an item.
+- The modal has a **type selector** — snippet, prompt, command, note, link (the 5 text/link system types; file/image are upload-only, out of scope).
+- **Type-gated fields** (mirrors the edit form): all types → title (required), description, tags; snippet/command → content + language; prompt/note → content; link → URL (required).
+- Submit runs a **server action `createItem`** (Zod-validated) → creates the item → **success toast**, closes the modal, and `router.refresh()` so the new item appears in the lists.
+- Errors surface as an error toast; the modal stays open on failure. Create button disabled until required fields are filled (title always; URL for link).
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- **Spec:** `context/features/item-create-spec.md`.
+- **New `Dialog` primitive needed** — `src/components/ui/` has `sheet.tsx` (side panel) and `alert-dialog.tsx` (confirm) but **no centered modal `dialog.tsx`**. Add one on the unified `radix-ui` `Dialog` (overlay + centered content + close button), following the existing sheet/alert-dialog conventions (`data-slot`, `cn`, `tw-animate-css`).
+- **Server action `createItem`** in `src/actions/items.ts` (alongside update/delete): `auth()` gate → Zod validation → new `createItem` query. Zod fields: `type` (enum of the 5 names), `title` trimmed non-empty, `description`/`content`/`language` empty→null optional (reuse the `emptyToNull` preprocess), `url` required + `z.url()` **only when `type === "link"`** (conditional via `superRefine`/`discriminatedUnion`), `tags` array. `{ success, data|error }` shape.
+- **Query `createItem` in `src/lib/db/items.ts`**: resolve the system `itemType` by name (`findFirst { name, isSystem:true, userId:null }`), then `prisma.item.create` under the **demo user** (demo-scoped, consistent with the rest — the action keeps the auth gate), `contentType: "TEXT"` for all 5 (link stores `url` + null content; the `ContentType` enum is only TEXT/FILE), tags via `connectOrCreate`. Return the created `ItemDetail` (reuse `itemDetailInclude`/`toItemDetail`) so the client could optionally open it later.
+- **UI:** new `CreateItemDialog` client component; the top-bar **New Item** `Button` (in `src/components/dashboard/TopBar.tsx`, currently `disabled`) becomes its trigger. Controlled local inputs (no form library, like the edit form); reuse the type-gating logic (`showContent`/`showLanguage`/`showUrl`). Type selector: a simple control (segmented button group of the 5 types with their icons/colors, or a native `<select>`) — no shadcn Select primitive exists, so avoid adding one; decide at `start`.
+- **Type metadata for the selector:** `DashboardShell` already receives `itemTypes` (the 7 `SidebarItemType`s) from the server layout and renders `TopBar` — thread those down (filtered to the 5 text/link types) so the selector needs no extra fetch. Or keep a small static list; decide at `start`.
+- **Testing:** unit-test the `createItem` action like update/delete (auth gate, title required, link-requires-URL validation, success, thrown-error) by mocking `@/auth` + the query. Vitest is on `main`, so `npm test` works on this branch.
+- Consistent with the app: **demo-scoped** for now (new items are owned by the demo user); flips to the real session user when the data layer de-demos. Re-seed the dev DB after browser-testing real creates.
 
 ## History
 

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 import { auth } from "@/auth";
 import {
+  createItem as createItemQuery,
   deleteItem as deleteItemQuery,
   updateItem as updateItemQuery,
   type ItemDetail,
@@ -68,6 +69,78 @@ export async function updateItem(
     return { success: true, data: item };
   } catch {
     return { success: false, error: "Could not save changes. Please try again." };
+  }
+}
+
+// The five creatable system types (file/image are upload-only, out of scope).
+// Not exported — a "use server" module may only export async functions.
+const CREATABLE_TYPES = [
+  "snippet",
+  "prompt",
+  "command",
+  "note",
+  "link",
+] as const;
+
+// Create schema. `url` is only required + format-checked for the link type;
+// other types ignore it. Empty optional strings are coerced to null.
+const createItemSchema = z
+  .object({
+    type: z.enum(CREATABLE_TYPES),
+    title: z.string().trim().min(1, "Title is required"),
+    description: z.preprocess(emptyToNull, z.string().nullable()).optional(),
+    content: z.preprocess(emptyToNull, z.string().nullable()).optional(),
+    language: z.preprocess(emptyToNull, z.string().nullable()).optional(),
+    url: z.preprocess(emptyToNull, z.string().nullable()).optional(),
+    tags: z.array(z.string().trim().min(1)).default([]),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type !== "link") return;
+    if (!data.url) {
+      ctx.addIssue({ code: "custom", path: ["url"], message: "URL is required" });
+    } else if (!z.url().safeParse(data.url).success) {
+      ctx.addIssue({ code: "custom", path: ["url"], message: "Enter a valid URL" });
+    }
+  });
+
+export type CreateItemInput = z.input<typeof createItemSchema>;
+
+// Create an item. Requires an authenticated session; the query is demo-scoped
+// (see createItem in lib/db/items.ts for the scoping note).
+export async function createItem(
+  input: CreateItemInput,
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "You must be signed in to create items." };
+  }
+
+  const parsed = createItemSchema.safeParse(input);
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message ?? "Invalid input.",
+    };
+  }
+
+  const { type, title, description, content, language, url, tags } = parsed.data;
+
+  try {
+    const item = await createItemQuery({
+      type,
+      title,
+      description: description ?? null,
+      content: content ?? null,
+      language: language ?? null,
+      url: url ?? null,
+      tags,
+    });
+    if (!item) {
+      return { success: false, error: "Invalid item type." };
+    }
+    return { success: true, data: item };
+  } catch {
+    return { success: false, error: "Could not create the item. Please try again." };
   }
 }
 
