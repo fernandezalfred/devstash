@@ -3,7 +3,11 @@
 import { z } from "zod";
 
 import { auth } from "@/auth";
-import { updateItem as updateItemQuery, type ItemDetail } from "@/lib/db/items";
+import {
+  deleteItem as deleteItemQuery,
+  updateItem as updateItemQuery,
+  type ItemDetail,
+} from "@/lib/db/items";
 
 // Treat an empty/whitespace-only string as "not set" so blank optional inputs
 // clear the field rather than failing validation (e.g. an empty URL box).
@@ -64,5 +68,26 @@ export async function updateItem(
     return { success: true, data: item };
   } catch {
     return { success: false, error: "Could not save changes. Please try again." };
+  }
+}
+
+type DeleteResult = { success: true } | { success: false; error: string };
+
+// Delete an item. Requires an authenticated session; the query is demo-scoped
+// (see deleteItem in lib/db/items.ts for the scoping note).
+export async function deleteItem(itemId: string): Promise<DeleteResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "You must be signed in to delete items." };
+  }
+
+  try {
+    const deleted = await deleteItemQuery(itemId);
+    if (!deleted) {
+      return { success: false, error: "Item not found." };
+    }
+    return { success: true };
+  } catch {
+    return { success: false, error: "Could not delete the item. Please try again." };
   }
 }

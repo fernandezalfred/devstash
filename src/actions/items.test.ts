@@ -1,17 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { updateItem } from "@/actions/items";
+import { deleteItem, updateItem } from "@/actions/items";
 import { auth } from "@/auth";
-import { updateItem as updateItemQuery } from "@/lib/db/items";
+import {
+  deleteItem as deleteItemQuery,
+  updateItem as updateItemQuery,
+} from "@/lib/db/items";
 
 // Mock the auth + DB boundaries so the action's own logic (auth gate, Zod
 // validation, empty-string normalization) is what's under test — no real
 // session or database.
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
-vi.mock("@/lib/db/items", () => ({ updateItem: vi.fn() }));
+vi.mock("@/lib/db/items", () => ({
+  updateItem: vi.fn(),
+  deleteItem: vi.fn(),
+}));
 
 const mockedAuth = vi.mocked(auth);
 const mockedQuery = vi.mocked(updateItemQuery);
+const mockedDeleteQuery = vi.mocked(deleteItemQuery);
 
 // A minimal ItemDetail the query can echo back on success.
 const fakeItem = {
@@ -45,6 +52,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockedAuth.mockResolvedValue({ user: { id: "user-1" } } as never);
   mockedQuery.mockResolvedValue(fakeItem);
+  mockedDeleteQuery.mockResolvedValue(true);
 });
 
 describe("updateItem action — auth", () => {
@@ -135,6 +143,39 @@ describe("updateItem action — query result", () => {
     expect(result).toEqual({
       success: false,
       error: "Could not save changes. Please try again.",
+    });
+  });
+});
+
+describe("deleteItem action", () => {
+  it("rejects when there is no session", async () => {
+    mockedAuth.mockResolvedValue(null as never);
+    const result = await deleteItem("item-1");
+    expect(result).toEqual({
+      success: false,
+      error: "You must be signed in to delete items.",
+    });
+    expect(mockedDeleteQuery).not.toHaveBeenCalled();
+  });
+
+  it("returns success when the item is deleted", async () => {
+    const result = await deleteItem("item-1");
+    expect(result).toEqual({ success: true });
+    expect(mockedDeleteQuery).toHaveBeenCalledWith("item-1");
+  });
+
+  it("returns not-found when the query reports nothing deleted", async () => {
+    mockedDeleteQuery.mockResolvedValue(false);
+    const result = await deleteItem("item-1");
+    expect(result).toEqual({ success: false, error: "Item not found." });
+  });
+
+  it("returns a friendly error when the query throws", async () => {
+    mockedDeleteQuery.mockRejectedValue(new Error("db down"));
+    const result = await deleteItem("item-1");
+    expect(result).toEqual({
+      success: false,
+      error: "Could not delete the item. Please try again.",
     });
   });
 });

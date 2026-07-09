@@ -20,7 +20,16 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { updateItem } from "@/actions/items";
+import { deleteItem, updateItem } from "@/actions/items";
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -108,7 +117,12 @@ export function ItemDrawerProvider({
           ) : error || !item ? (
             <ItemDrawerError />
           ) : (
-            <ItemDrawerBody key={item.id} item={item} onUpdated={setItem} />
+            <ItemDrawerBody
+              key={item.id}
+              item={item}
+              onUpdated={setItem}
+              onClose={() => setOpenId(null)}
+            />
           )}
         </SheetContent>
       </Sheet>
@@ -127,9 +141,11 @@ function formatFullDate(iso: string): string {
 function ItemDrawerBody({
   item,
   onUpdated,
+  onClose,
 }: {
   item: ItemDetail;
   onUpdated: (item: ItemDetail) => void;
+  onClose: () => void;
 }) {
   const Icon = itemTypeIcons[item.type.icon];
   const accent = item.type.color;
@@ -195,11 +211,7 @@ function ItemDrawerBody({
               label="Edit"
               onClick={() => setEditing(true)}
             />
-            <ActionButton
-              icon={Trash2}
-              label="Delete"
-              className="text-red-500 hover:bg-red-500/10 hover:text-red-500"
-            />
+            <DeleteItemDialog itemId={item.id} onDeleted={onClose} />
           </div>
         </div>
       </div>
@@ -311,6 +323,67 @@ function ActionButton({
       <Icon className={cn("size-4", active && activeClassName)} />
       <span className="hidden sm:inline">{label}</span>
     </button>
+  );
+}
+
+// Delete action: a confirmation dialog behind the trash button. On confirm it
+// calls the server action, then closes the drawer and refreshes the card lists
+// so the deleted item disappears. Dialog stays open on error.
+function DeleteItemDialog({
+  itemId,
+  onDeleted,
+}: {
+  itemId: string;
+  onDeleted: () => void;
+}) {
+  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    const result = await deleteItem(itemId);
+    setDeleting(false);
+
+    if (!result.success) {
+      toast(result.error, "error");
+      return;
+    }
+    setOpen(false);
+    onDeleted();
+    router.refresh();
+    toast("Item deleted.");
+  }
+
+  return (
+    <AlertDialog open={open} onOpenChange={setOpen}>
+      <AlertDialogTrigger asChild>
+        <button
+          type="button"
+          aria-label="Delete"
+          className="flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm text-red-500 transition-colors hover:bg-red-500/10 hover:text-red-500"
+        >
+          <Trash2 className="size-4" />
+          <span className="hidden sm:inline">Delete</span>
+        </button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogTitle>Delete this item?</AlertDialogTitle>
+        <AlertDialogDescription className="mt-2">
+          This permanently deletes the item. This action cannot be undone.
+        </AlertDialogDescription>
+        <div className="mt-5 flex justify-end gap-2">
+          <AlertDialogCancel asChild>
+            <Button variant="outline" disabled={deleting}>
+              Cancel
+            </Button>
+          </AlertDialogCancel>
+          <Button variant="destructive" disabled={deleting} onClick={handleDelete}>
+            {deleting ? "Deleting…" : "Delete"}
+          </Button>
+        </div>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 
