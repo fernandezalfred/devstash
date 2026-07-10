@@ -27,6 +27,10 @@ import {
   isCodeEditorType,
 } from "@/components/items/CodeEditor";
 import {
+  isMarkdownEditorType,
+  MarkdownEditor,
+} from "@/components/items/MarkdownEditor";
+import {
   AlertDialog,
   AlertDialogCancel,
   AlertDialogContent,
@@ -238,6 +242,8 @@ function ItemDrawerBody({
                 language={item.language}
                 fallbackLanguage={codeFallbackLanguage(typeName)}
               />
+            ) : isMarkdownEditorType(typeName) ? (
+              <MarkdownEditor value={item.content} />
             ) : (
               <CodeBlock content={item.content} />
             )}
@@ -602,7 +608,12 @@ function ItemEditForm({
         </Field>
 
         {showContent && (
-          <Field label="Content">
+          <Field
+            label="Content"
+            plain={
+              isCodeEditorType(typeName) || isMarkdownEditorType(typeName)
+            }
+          >
             {isCodeEditorType(typeName) ? (
               <CodeEditor
                 value={content}
@@ -610,6 +621,8 @@ function ItemEditForm({
                 language={language}
                 fallbackLanguage={codeFallbackLanguage(typeName)}
               />
+            ) : isMarkdownEditorType(typeName) ? (
+              <MarkdownEditor value={content} onChange={setContent} />
             ) : (
               <textarea
                 className={cn(inputClass, "min-h-40 resize-y font-mono")}
@@ -655,19 +668,27 @@ function ItemEditForm({
 function Field({
   label,
   hint,
+  plain,
   children,
 }: {
   label: string;
   hint?: string;
+  /**
+   * Render as a <div> instead of a <label>. Required when the field hosts a
+   * composite editor with its own buttons: clicking anywhere non-interactive
+   * inside a <label> dispatches a click on its first button (e.g. Copy).
+   */
+  plain?: boolean;
   children: React.ReactNode;
 }) {
+  const Wrapper = plain ? "div" : "label";
   return (
-    <label className="block">
+    <Wrapper className="block">
       <span className="mb-1.5 flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
         {label}
         {hint && <span className="normal-case">· {hint}</span>}
       </span>
       {children}
-    </label>
+    </Wrapper>
   );
 }
