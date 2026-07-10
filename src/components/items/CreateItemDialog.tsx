@@ -10,6 +10,10 @@ import {
   codeFallbackLanguage,
   isCodeEditorType,
 } from "@/components/items/CodeEditor";
+import {
+  isMarkdownEditorType,
+  MarkdownEditor,
+} from "@/components/items/MarkdownEditor";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -61,6 +65,14 @@ export function CreateItemDialog({
   const [form, setForm] = useState(() => emptyForm(startType));
   const [submitting, setSubmitting] = useState(false);
 
+  // Single close/open path so the form also resets when we close programmatically
+  // (Cancel, successful create) — Radix only calls onOpenChange for its own
+  // triggers (Esc, overlay, X), not for direct state updates.
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next);
+    if (!next) setForm(emptyForm(startType));
+  };
+
   const set = <K extends keyof ReturnType<typeof emptyForm>>(
     key: K,
     value: string,
@@ -98,20 +110,13 @@ export function CreateItemDialog({
       toast(result.error, "error");
       return;
     }
-    setOpen(false);
+    handleOpenChange(false);
     router.refresh();
     toast("Item created.");
   }
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        setOpen(next);
-        // Reset to a fresh form (keeping the preselected type) whenever it closes.
-        if (!next) setForm(emptyForm(startType));
-      }}
-    >
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
         <Button size="sm">
           <Plus className="size-4" />
@@ -169,13 +174,23 @@ export function CreateItemDialog({
           </Field>
 
           {showContent && (
-            <Field label="Content">
+            <Field
+              label="Content"
+              plain={
+                isCodeEditorType(form.type) || isMarkdownEditorType(form.type)
+              }
+            >
               {isCodeEditorType(form.type) ? (
                 <CodeEditor
                   value={form.content}
                   onChange={(v) => set("content", v)}
                   language={form.language}
                   fallbackLanguage={codeFallbackLanguage(form.type)}
+                />
+              ) : isMarkdownEditorType(form.type) ? (
+                <MarkdownEditor
+                  value={form.content}
+                  onChange={(v) => set("content", v)}
                 />
               ) : (
                 <textarea
@@ -219,7 +234,7 @@ export function CreateItemDialog({
         <div className="mt-6 flex justify-end gap-2">
           <Button
             variant="outline"
-            onClick={() => setOpen(false)}
+            onClick={() => handleOpenChange(false)}
             disabled={submitting}
           >
             Cancel
@@ -237,19 +252,27 @@ export function CreateItemDialog({
 function Field({
   label,
   hint,
+  plain,
   children,
 }: {
   label: string;
   hint?: string;
+  /**
+   * Render as a <div> instead of a <label>. Required when the field hosts a
+   * composite editor with its own buttons: clicking anywhere non-interactive
+   * inside a <label> dispatches a click on its first button (e.g. Copy).
+   */
+  plain?: boolean;
   children: React.ReactNode;
 }) {
+  const Wrapper = plain ? "div" : "label";
   return (
-    <label className="block">
+    <Wrapper className="block">
       <span className="mb-1.5 flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
         {label}
         {hint && <span className="normal-case">· {hint}</span>}
       </span>
       {children}
-    </label>
+    </Wrapper>
   );
 }

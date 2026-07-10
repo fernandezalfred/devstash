@@ -1,16 +1,30 @@
-# Current Feature
+# Current Feature: Markdown Editor (Write/Preview) for notes & prompts
 
 ## status
 
-Completed
+In Progress
 
 ## Goals
 
-<!-- Bullet points of what success looks like -->
+- Create a reusable `MarkdownEditor` component with a tabbed **Write / Preview** interface.
+- Use `MarkdownEditor` in place of the plain `Textarea` for the content field of **note** and **prompt** types only.
+- Leave the Monaco `CodeEditor` untouched for **snippet** and **command** (no changes).
+- Render Markdown with **`react-markdown` + `remark-gfm`** (GitHub Flavored Markdown).
+- Match the existing dark theme: `bg-[#1e1e1e]` container, `bg-[#2d2d2d]` header, with a copy button in the header styled like `CodeEditor`'s.
+- Support both **display (read-only)** and **edit** modes: read-only shows only the Preview tab; edit defaults to Write with Preview available.
+- Style the preview via a dedicated `.markdown-preview` CSS class: distinct h1–h6, code blocks (dark bg + mono), inline code (subtle bg), ordered/unordered lists, blockquotes (left border), blue links w/ hover, bordered tables with header bg.
+- Fluid height capped at 400px, matching `CodeEditor` behavior.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec source: `context/features/markdown-editor-spec.md`.
+- Affected surfaces (same three as the Monaco work): `CreateItemDialog` content field, `ItemDrawer` edit form content field, and `ItemDrawer` view-mode content — all currently branch `isCodeEditorType(type) ? CodeEditor : textarea/CodeBlock`. Add a parallel `isMarkdownEditorType` (`prompt`, `note`) branch so the content field is: snippet/command → `CodeEditor`, prompt/note → `MarkdownEditor`, else textarea/CodeBlock fallback.
+- New deps: `react-markdown` + `remark-gfm` — verify current API via Context7 at implementation time. `react-markdown` is client-side; the drawer/dialog are already client components.
+- Tabs: implement with lightweight local state (Write/Preview), no new Radix Tabs primitive — mirrors the segmented-button pattern already used in `CreateItemDialog`.
+- `.markdown-preview` styling lives in `src/app/globals.css` as plain CSS (Tailwind v4 preflight strips default element styles, so the preview needs explicit rules; scope everything under `.markdown-preview`).
+- The Write tab is a plain `<textarea>` (not Monaco), so it does **not** hit the Radix `FocusScope`/Monaco focus bug — a normal copy button is fine here (reuse CodeEditor's visual style; focus-deflection not required).
+- Header bg is `bg-[#2d2d2d]` per spec (CodeEditor uses `bg-[#252526]` — intentional minor difference).
+- No DB/schema change (content-field UI swap); components aren't unit-tested — verify the preview rendering + tabs in the browser. Re-seed the dev DB afterward if test items are created.
 
 ## History
 
