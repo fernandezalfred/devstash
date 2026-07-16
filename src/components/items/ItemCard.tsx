@@ -1,6 +1,8 @@
 "use client";
 
-import { Pin, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+
+import { Check, Copy, Pin, Star } from "lucide-react";
 
 import { useItemDrawer } from "@/components/items/ItemDrawer";
 import { type DashboardItem } from "@/lib/db/items";
@@ -19,12 +21,42 @@ export function ItemCard({ item }: { item: DashboardItem }) {
   const Icon = itemTypeIcons[item.typeIcon];
   const accent = item.typeColor;
   const { open } = useItemDrawer();
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  // What a quick copy grabs: the text body for text types, the URL for links.
+  const copyText = item.content ?? item.url;
+
+  async function handleCopy(event: React.MouseEvent) {
+    event.stopPropagation();
+    if (!copyText) return;
+    try {
+      await navigator.clipboard.writeText(copyText);
+      setCopied(true);
+    } catch {
+      // Clipboard can be unavailable (permissions/insecure origin); ignore.
+    }
+  }
 
   return (
-    <button
-      type="button"
+    // A div instead of a <button> so the quick-copy <button> isn't nested
+    // inside a button (invalid HTML); keyboard access mirrors a button.
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => open(item.id)}
-      className="flex h-full flex-col gap-3 rounded-lg border border-l-4 border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          open(item.id);
+        }
+      }}
+      className="group flex h-full cursor-pointer flex-col gap-3 rounded-lg border border-l-4 border-border bg-card p-4 text-left transition-colors hover:border-foreground/20 focus-visible:border-foreground/20 focus-visible:outline-none"
       style={{ borderLeftColor: accent }}
     >
       <div className="flex items-start gap-3">
@@ -50,9 +82,25 @@ export function ItemCard({ item }: { item: DashboardItem }) {
             </p>
           )}
         </div>
-        <span className="shrink-0 text-xs text-muted-foreground">
-          {formatItemDate(item.updatedAt)}
-        </span>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {copyText && (
+            <button
+              type="button"
+              onClick={handleCopy}
+              aria-label={copied ? "Copied" : "Copy"}
+              className="flex size-6 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100"
+            >
+              {copied ? (
+                <Check className="size-3.5 text-emerald-500" />
+              ) : (
+                <Copy className="size-3.5" />
+              )}
+            </button>
+          )}
+          <span className="text-xs text-muted-foreground">
+            {formatItemDate(item.updatedAt)}
+          </span>
+        </div>
       </div>
       {item.tags.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -66,6 +114,6 @@ export function ItemCard({ item }: { item: DashboardItem }) {
           ))}
         </div>
       )}
-    </button>
+    </div>
   );
 }

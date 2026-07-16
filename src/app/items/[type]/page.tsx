@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { CreateItemDialog } from "@/components/items/CreateItemDialog";
+import { FileRow } from "@/components/items/FileRow";
 import { ImageCard } from "@/components/items/ImageCard";
 import { ItemCard } from "@/components/items/ItemCard";
 import { getItemsByType, getSidebarItemTypes } from "@/lib/db/items";
@@ -55,6 +56,12 @@ export default async function ItemsByTypePage({
         <p className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
           No {type.name.toLowerCase()} items yet.
         </p>
+      ) : type.slug === "files" ? (
+        <div className="divide-y divide-border overflow-hidden rounded-lg border border-border bg-card">
+          {items.map((item) => (
+            <FileRow key={item.id} item={item} />
+          ))}
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
           {items.map((item) =>
