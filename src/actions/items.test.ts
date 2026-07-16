@@ -7,21 +7,24 @@ import {
   deleteItem as deleteItemQuery,
   updateItem as updateItemQuery,
 } from "@/lib/db/items";
+import { deleteFromR2 } from "@/lib/r2";
 
-// Mock the auth + DB boundaries so the action's own logic (auth gate, Zod
+// Mock the auth + DB + R2 boundaries so the action's own logic (auth gate, Zod
 // validation, empty-string normalization) is what's under test — no real
-// session or database.
+// session, database, or bucket.
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("@/lib/db/items", () => ({
   updateItem: vi.fn(),
   deleteItem: vi.fn(),
   createItem: vi.fn(),
 }));
+vi.mock("@/lib/r2", () => ({ deleteFromR2: vi.fn() }));
 
 const mockedAuth = vi.mocked(auth);
 const mockedQuery = vi.mocked(updateItemQuery);
 const mockedDeleteQuery = vi.mocked(deleteItemQuery);
 const mockedCreateQuery = vi.mocked(createItemQuery);
+const mockedDeleteFromR2 = vi.mocked(deleteFromR2);
 
 // A minimal ItemDetail the query can echo back on success.
 const fakeItem = {
@@ -31,6 +34,7 @@ const fakeItem = {
   content: null,
   url: null,
   fileName: null,
+  fileSize: null,
   language: null,
   contentType: "TEXT" as const,
   isPinned: false,
@@ -55,7 +59,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockedAuth.mockResolvedValue({ user: { id: "user-1" } } as never);
   mockedQuery.mockResolvedValue(fakeItem);
-  mockedDeleteQuery.mockResolvedValue(true);
+  mockedDeleteQuery.mockResolvedValue({ deleted: true, fileKey: null });
   mockedCreateQuery.mockResolvedValue(fakeItem);
 });
 
@@ -174,12 +178,37 @@ describe("deleteItem action", () => {
     const result = await deleteItem("item-1");
     expect(result).toEqual({ success: true });
     expect(mockedDeleteQuery).toHaveBeenCalledWith("item-1");
+    expect(mockedDeleteFromR2).not.toHaveBeenCalled();
   });
 
   it("returns not-found when the query reports nothing deleted", async () => {
-    mockedDeleteQuery.mockResolvedValue(false);
+    mockedDeleteQuery.mockResolvedValue({ deleted: false, fileKey: null });
     const result = await deleteItem("item-1");
     expect(result).toEqual({ success: false, error: "Item not found." });
+  });
+
+  it("removes the R2 object when the deleted item had a file", async () => {
+    mockedDeleteQuery.mockResolvedValue({
+      deleted: true,
+      fileKey: "files/abc/report.pdf",
+    });
+    const result = await deleteItem("item-1");
+    expect(result).toEqual({ success: true });
+    expect(mockedDeleteFromR2).toHaveBeenCalledWith("files/abc/report.pdf");
+  });
+
+  it("still succeeds when the R2 cleanup fails", async () => {
+    mockedDeleteQuery.mockResolvedValue({
+      deleted: true,
+      fileKey: "files/abc/report.pdf",
+    });
+    mockedDeleteFromR2.mockRejectedValue(new Error("r2 down"));
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => {});
+    const result = await deleteItem("item-1");
+    consoleError.mockRestore();
+    expect(result).toEqual({ success: true });
   });
 
   it("returns a friendly error when the query throws", async () => {

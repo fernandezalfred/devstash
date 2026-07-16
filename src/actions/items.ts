@@ -9,6 +9,7 @@ import {
   updateItem as updateItemQuery,
   type ItemDetail,
 } from "@/lib/db/items";
+import { deleteFromR2 } from "@/lib/r2";
 
 // Treat an empty/whitespace-only string as "not set" so blank optional inputs
 // clear the field rather than failing validation (e.g. an empty URL box).
@@ -147,7 +148,9 @@ export async function createItem(
 type DeleteResult = { success: true } | { success: false; error: string };
 
 // Delete an item. Requires an authenticated session; the query is demo-scoped
-// (see deleteItem in lib/db/items.ts for the scoping note).
+// (see deleteItem in lib/db/items.ts for the scoping note). For FILE items the
+// stored R2 object is removed after the row — best-effort, since the item is
+// already gone and an orphaned object is preferable to a failed delete.
 export async function deleteItem(itemId: string): Promise<DeleteResult> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -155,9 +158,16 @@ export async function deleteItem(itemId: string): Promise<DeleteResult> {
   }
 
   try {
-    const deleted = await deleteItemQuery(itemId);
+    const { deleted, fileKey } = await deleteItemQuery(itemId);
     if (!deleted) {
       return { success: false, error: "Item not found." };
+    }
+    if (fileKey) {
+      try {
+        await deleteFromR2(fileKey);
+      } catch (error) {
+        console.error(`Failed to delete R2 object ${fileKey}:`, error);
+      }
     }
     return { success: true };
   } catch {

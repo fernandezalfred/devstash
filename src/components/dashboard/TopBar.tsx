@@ -7,9 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type SidebarItemType } from "@/lib/db/items";
 
-// Slugs of the upload-only Pro types, excluded from the "New Item" type picker.
-const NON_CREATABLE_SLUGS = new Set(["files", "images"]);
-
 // Top bar: brand, sidebar toggle, search field, and action buttons. Search and
 // New Collection stay display-only until later phases; the sidebar toggle is
 // wired to the dashboard shell and New Item opens the create modal.
@@ -20,9 +17,6 @@ export function TopBar({
   onToggleSidebar?: () => void;
   itemTypes?: SidebarItemType[];
 }) {
-  const creatableTypes = itemTypes.filter(
-    (type) => !NON_CREATABLE_SLUGS.has(type.slug),
-  );
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
       <div className="flex items-center gap-1.5 font-semibold">
@@ -60,7 +54,7 @@ export function TopBar({
           <FolderPlus className="size-4" />
           <span className="hidden sm:inline">New Collection</span>
         </Button>
-        <CreateItemDialog types={creatableTypes} />
+        <CreateItemDialog types={itemTypes} />
       </div>
     </header>
   );

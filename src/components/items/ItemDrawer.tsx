@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation";
 import {
   Calendar,
   Copy,
+  Download,
+  File as FileIcon,
   FolderOpen,
   Loader2,
   Pencil,
@@ -47,6 +49,7 @@ import {
 import { toast } from "@/components/ui/toast";
 import { type ItemDetail } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
+import { formatBytes } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 
 // Drawer state lives in this client context so server-rendered cards (ItemCard,
@@ -264,9 +267,7 @@ function ItemDrawerBody({
         )}
 
         {item.contentType === "FILE" && item.fileName && (
-          <Section label="File">
-            <p className="text-sm">{item.fileName}</p>
-          </Section>
+          <ItemFileSection item={item} />
         )}
 
         {item.tags.length > 0 && (
@@ -313,6 +314,54 @@ function ItemDrawerBody({
         </Section>
       </div>
     </div>
+  );
+}
+
+// File/image detail: image items get an inline preview served through the
+// download proxy (same-origin, session-authed), both kinds get a file info row
+// and a download button (?download=1 → Content-Disposition: attachment).
+function ItemFileSection({ item }: { item: ItemDetail }) {
+  const isImage = item.type.name.toLowerCase() === "image";
+  const fileUrl = `/api/items/${item.id}/download`;
+
+  return (
+    <>
+      {isImage && (
+        <Section label="Preview">
+          {/* Proxied private-bucket image; next/image can't optimize it. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={fileUrl}
+            alt={item.title}
+            className="max-h-80 w-auto max-w-full rounded-md border border-border"
+          />
+        </Section>
+      )}
+
+      <Section label="File">
+        <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 p-3">
+          <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-muted">
+            <FileIcon className="size-5 text-muted-foreground" />
+          </span>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-medium">{item.fileName}</p>
+            {item.fileSize !== null && (
+              <p className="text-xs text-muted-foreground">
+                {formatBytes(item.fileSize)}
+              </p>
+            )}
+          </div>
+          <a
+            href={`${fileUrl}?download=1`}
+            download={item.fileName ?? undefined}
+            className="flex shrink-0 items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+          >
+            <Download className="size-4" />
+            <span className="hidden sm:inline">Download</span>
+          </a>
+        </div>
+      </Section>
+    </>
   );
 }
 
