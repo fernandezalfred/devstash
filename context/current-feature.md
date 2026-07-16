@@ -1,16 +1,26 @@
-# Current Feature
+# Current Feature: File List View
 
 ## status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- What success looks like -->
+- Update `/items/files` to display as a single-column list (like Google Drive/Dropbox) instead of grid cards
+- Each row shows: file icon (by extension), file name, file size, upload date, download button
+- Row hover highlight
+- Clicking a row opens the `ItemDrawer`
+- Download button triggers a direct download (stops propagation so the drawer doesn't open)
+- Responsive: stack row info vertically on mobile
+- (Added mid-feature by request) Quick-copy icon on `ItemCard`: hover-revealed, copies content (text types) or URL (links) with check feedback, without opening the drawer
 
 ## Notes
 
-<!-- Additional context, constraints, or details -->
+- Spec: `context/features/file-display-spec.md`
+- Applies to `/items/files` (`src/app/items/[type]/page.tsx`), which currently renders the generic `ItemCard` grid; follow the images-page pattern (branch on `type.slug === "files"` — `type.name` is display-cased, use the slug)
+- `DashboardItem` currently lacks `fileName`/`fileSize` — the list row needs both, so `getItemsByType`/`toDashboardItem` (or a file-specific mapping) must expose them
+- Direct download already exists: `GET /api/items/[id]/download?download=1` (attachment disposition)
+- File extension helpers live in `src/lib/uploads.ts` (`fileExtension`, `formatBytes`)
 
 ## History
 

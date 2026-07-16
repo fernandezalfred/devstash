@@ -17,6 +17,11 @@ export interface DashboardItem {
   isPinned: boolean;
   isFavorite: boolean;
   tags: string[];
+  content: string | null; // text body (TEXT items)
+  url: string | null; // link items
+  fileName: string | null; // FILE items only
+  fileSize: number | null; // FILE items only, bytes
+  createdAt: string; // ISO date (upload date for FILE items)
   updatedAt: string; // ISO date
 }
 
@@ -32,6 +37,11 @@ type ItemWithRelations = {
   description: string | null;
   isPinned: boolean;
   isFavorite: boolean;
+  content: string | null;
+  url: string | null;
+  fileName: string | null;
+  fileSize: number | null;
+  createdAt: Date;
   updatedAt: Date;
   itemType: { name: string; icon: string; color: string };
   tags: { name: string }[];
@@ -50,6 +60,11 @@ function toDashboardItem(item: ItemWithRelations): DashboardItem {
     isPinned: item.isPinned,
     isFavorite: item.isFavorite,
     tags: item.tags.map((tag) => tag.name),
+    content: item.content,
+    url: item.url,
+    fileName: item.fileName,
+    fileSize: item.fileSize,
+    createdAt: item.createdAt.toISOString(),
     updatedAt: item.updatedAt.toISOString(),
   };
 }
