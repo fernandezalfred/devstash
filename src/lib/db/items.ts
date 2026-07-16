@@ -176,6 +176,7 @@ export interface ItemDetail {
   content: string | null;
   url: string | null;
   fileName: string | null;
+  fileSize: number | null;
   language: string | null;
   contentType: "TEXT" | "FILE";
   isPinned: boolean;
@@ -209,6 +210,7 @@ type ItemWithDetail = {
   content: string | null;
   url: string | null;
   fileName: string | null;
+  fileSize: number | null;
   language: string | null;
   contentType: "TEXT" | "FILE";
   isPinned: boolean;
@@ -228,6 +230,7 @@ function toItemDetail(item: ItemWithDetail): ItemDetail {
     content: item.content,
     url: item.url,
     fileName: item.fileName,
+    fileSize: item.fileSize,
     language: item.language,
     contentType: item.contentType,
     isPinned: item.isPinned,
@@ -311,20 +314,31 @@ export async function updateItem(
   return toItemDetail(item);
 }
 
+export interface DeleteItemResult {
+  deleted: boolean;
+  // R2 object key of a FILE item's upload, so the calling action can remove
+  // the object from storage after the row is gone. Null for TEXT items.
+  fileKey: string | null;
+}
+
 // Delete an item, demo-user-scoped (matching getItemDetail/updateItem — the
-// calling action still requires an authenticated session). Returns false when
-// the item isn't found under the demo user so the action can report not-found.
-// ItemCollection join rows drop via onDelete: Cascade and the implicit ItemTags
-// join rows are removed by Prisma; shared Tag rows are left intact.
-export async function deleteItem(id: string): Promise<boolean> {
+// calling action still requires an authenticated session). Returns
+// deleted: false when the item isn't found under the demo user so the action
+// can report not-found. ItemCollection join rows drop via onDelete: Cascade and
+// the implicit ItemTags join rows are removed by Prisma; shared Tag rows are
+// left intact.
+export async function deleteItem(id: string): Promise<DeleteItemResult> {
   const existing = await prisma.item.findFirst({
     where: { id, user: { email: DEMO_USER_EMAIL } },
-    select: { id: true },
+    select: { id: true, contentType: true, fileUrl: true },
   });
-  if (!existing) return false;
+  if (!existing) return { deleted: false, fileKey: null };
 
   await prisma.item.delete({ where: { id } });
-  return true;
+  return {
+    deleted: true,
+    fileKey: existing.contentType === "FILE" ? existing.fileUrl : null,
+  };
 }
 
 // Fields for creating an item. `type` is the system item type name (lowercase
@@ -379,6 +393,76 @@ export async function createItem(
     include: itemDetailInclude,
   });
   return toItemDetail(item);
+}
+
+// Fields for creating a file/image item. `type` is the system item type name
+// ("file" | "image"); `fileUrl` stores the R2 object key (the app serves files
+// through the download proxy, so no absolute URL is persisted).
+export interface CreateFileItemData {
+  type: string;
+  title: string;
+  description: string | null;
+  fileUrl: string;
+  fileName: string;
+  fileSize: number;
+  tags: string[];
+}
+
+// Create a FILE-kind item under the demo user and return its ItemDetail, or
+// null when `type` isn't a system type. Demo-user-scoped to match the rest of
+// the layer — the calling route still requires an authenticated session.
+export async function createFileItem(
+  data: CreateFileItemData,
+): Promise<ItemDetail | null> {
+  const itemType = await prisma.itemType.findFirst({
+    where: { name: data.type, isSystem: true, userId: null },
+    select: { id: true },
+  });
+  if (!itemType) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { email: DEMO_USER_EMAIL },
+    select: { id: true },
+  });
+  if (!user) return null;
+
+  const item = await prisma.item.create({
+    data: {
+      title: data.title,
+      description: data.description,
+      contentType: "FILE",
+      fileUrl: data.fileUrl,
+      fileName: data.fileName,
+      fileSize: data.fileSize,
+      userId: user.id,
+      itemTypeId: itemType.id,
+      tags: {
+        connectOrCreate: data.tags.map((name) => ({
+          where: { name },
+          create: { name },
+        })),
+      },
+    },
+    include: itemDetailInclude,
+  });
+  return toItemDetail(item);
+}
+
+export interface ItemFile {
+  fileKey: string; // R2 object key (stored in Item.fileUrl)
+  fileName: string;
+}
+
+// The stored file reference for a FILE item, for the download proxy.
+// Demo-user-scoped to match getItemDetail; null when the item doesn't exist,
+// isn't a FILE item, or has no stored key.
+export async function getItemFile(id: string): Promise<ItemFile | null> {
+  const item = await prisma.item.findFirst({
+    where: { id, user: { email: DEMO_USER_EMAIL }, contentType: "FILE" },
+    select: { fileUrl: true, fileName: true },
+  });
+  if (!item?.fileUrl) return null;
+  return { fileKey: item.fileUrl, fileName: item.fileName ?? "download" };
 }
 
 export interface DashboardItemStats {

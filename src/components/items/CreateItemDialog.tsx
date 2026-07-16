@@ -10,6 +10,7 @@ import {
   codeFallbackLanguage,
   isCodeEditorType,
 } from "@/components/items/CodeEditor";
+import { FileUpload } from "@/components/items/FileUpload";
 import {
   isMarkdownEditorType,
   MarkdownEditor,
@@ -24,6 +25,7 @@ import {
 import { toast } from "@/components/ui/toast";
 import { type SidebarItemType } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
+import { isUploadKind } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 
 const inputClass =
@@ -63,14 +65,21 @@ export function CreateItemDialog({
       : (creatableValues[0] ?? "snippet");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(() => emptyForm(startType));
+  const [file, setFile] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Single close/open path so the form also resets when we close programmatically
   // (Cancel, successful create) — Radix only calls onOpenChange for its own
   // triggers (Esc, overlay, X), not for direct state updates.
   const handleOpenChange = (next: boolean) => {
+    if (!next && submitting) return; // don't lose an in-flight upload
     setOpen(next);
-    if (!next) setForm(emptyForm(startType));
+    if (!next) {
+      setForm(emptyForm(startType));
+      setFile(null);
+      setUploadProgress(null);
+    }
   };
 
   const set = <K extends keyof ReturnType<typeof emptyForm>>(
@@ -78,6 +87,13 @@ export function CreateItemDialog({
     value: string,
   ) => setForm((f) => ({ ...f, [key]: value }));
 
+  const selectType = (value: string) => {
+    set("type", value);
+    // A selected file may not satisfy the new type's constraints.
+    if (value !== form.type) setFile(null);
+  };
+
+  const isUpload = isUploadKind(form.type);
   const showContent = ["snippet", "prompt", "command", "note"].includes(
     form.type,
   );
@@ -87,24 +103,29 @@ export function CreateItemDialog({
   const canCreate =
     form.title.trim().length > 0 &&
     (!showUrl || form.url.trim().length > 0) &&
+    (!isUpload || file !== null) &&
     !submitting;
 
   async function handleCreate() {
     if (!canCreate) return;
     setSubmitting(true);
-    const result = await createItem({
-      type: form.type as never,
-      title: form.title,
-      description: form.description,
-      content: form.content,
-      language: form.language,
-      url: form.url,
-      tags: form.tags
-        .split(",")
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-    });
+
+    const result = isUpload
+      ? await uploadFileItem(form, file!, setUploadProgress)
+      : await createItem({
+          type: form.type as never,
+          title: form.title,
+          description: form.description,
+          content: form.content,
+          language: form.language,
+          url: form.url,
+          tags: form.tags
+            .split(",")
+            .map((tag) => tag.trim())
+            .filter(Boolean),
+        });
     setSubmitting(false);
+    setUploadProgress(null);
 
     if (!result.success) {
       toast(result.error, "error");
@@ -137,7 +158,7 @@ export function CreateItemDialog({
               <button
                 key={type.id}
                 type="button"
-                onClick={() => set("type", value)}
+                onClick={() => selectType(value)}
                 className={cn(
                   "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm transition-colors",
                   selected
@@ -172,6 +193,18 @@ export function CreateItemDialog({
               onChange={(e) => set("description", e.target.value)}
             />
           </Field>
+
+          {isUpload && (
+            <Field label={form.type === "image" ? "Image" : "File"} plain>
+              <FileUpload
+                kind={form.type as "file" | "image"}
+                file={file}
+                onSelect={setFile}
+                progress={uploadProgress}
+                disabled={submitting}
+              />
+            </Field>
+          )}
 
           {showContent && (
             <Field
@@ -247,6 +280,53 @@ export function CreateItemDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+type UploadResult =
+  | { success: true }
+  | { success: false; error: string };
+
+// Upload a file/image item through the /api/upload route with an XHR so we can
+// surface real upload progress (fetch can't observe request progress).
+function uploadFileItem(
+  form: ReturnType<typeof emptyForm>,
+  file: File,
+  onProgress: (pct: number) => void,
+): Promise<UploadResult> {
+  const data = new FormData();
+  data.set("file", file);
+  data.set("type", form.type);
+  data.set("title", form.title);
+  data.set("description", form.description);
+  data.set("tags", form.tags);
+
+  return new Promise((resolve) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "/api/upload");
+    onProgress(0);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress((event.loaded / event.total) * 100);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve({ success: true });
+        return;
+      }
+      let message = "Upload failed. Please try again.";
+      try {
+        const body = JSON.parse(xhr.responseText) as { error?: string };
+        if (body.error) message = body.error;
+      } catch {
+        // non-JSON error body — keep the generic message
+      }
+      resolve({ success: false, error: message });
+    };
+    xhr.onerror = () =>
+      resolve({ success: false, error: "Upload failed. Check your connection." });
+    xhr.send(data);
+  });
 }
 
 function Field({

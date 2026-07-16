@@ -5,9 +5,6 @@ import { ItemCard } from "@/components/items/ItemCard";
 import { getItemsByType, getSidebarItemTypes } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
 
-// Upload-only Pro types can't be created via the New Item dialog.
-const NON_CREATABLE_SLUGS = new Set(["files", "images"]);
-
 // Render per-request so the list reflects the current DB state instead of baking
 // data in at build time.
 export const dynamic = "force-dynamic";
@@ -29,11 +26,6 @@ export default async function ItemsByTypePage({
   const Icon = itemTypeIcons[type.icon];
   const accent = type.color;
 
-  const creatableTypes = sidebarTypes.filter(
-    (t) => !NON_CREATABLE_SLUGS.has(t.slug),
-  );
-  const isCreatable = !NON_CREATABLE_SLUGS.has(type.slug);
-
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex items-center justify-between gap-3">
@@ -51,13 +43,11 @@ export default async function ItemsByTypePage({
             </p>
           </div>
         </div>
-        {isCreatable && (
-          <CreateItemDialog
-            types={creatableTypes}
-            initialType={type.name.toLowerCase()}
-            triggerLabel={`New ${type.name}`}
-          />
-        )}
+        <CreateItemDialog
+          types={sidebarTypes}
+          initialType={type.name.toLowerCase()}
+          triggerLabel={`New ${type.name}`}
+        />
       </div>
 
       {items.length === 0 ? (
