@@ -1,16 +1,23 @@
-# Current Feature
+# Current Feature: Image Gallery View
 
 ## status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- What success looks like -->
+- Create an image thumbnail card to replace the current item card on the images page
+- Show an image grid/gallery with 3 columns
+- Display the image thumbnail with a 16:9 aspect ratio (`aspect-video`)
+- Use `object-cover` to fill the card (may crop edges)
+- Add a subtle hover zoom effect (5% scale with 300ms transition)
 
 ## Notes
 
-<!-- Additional context, constraints, or details -->
+- Spec: `context/features/image-display-spec.md`
+- Applies to the `/items/images` page, which currently renders the generic `ItemCard` grid (`src/app/items/[type]/page.tsx`)
+- Thumbnails can be served through the existing inline download proxy (`GET /api/items/[id]/download`, inline by default) — the bucket stays private
+- Existing pieces: `image` items store `fileUrl` (R2 object key)/`fileName`/`fileSize`; cards open the item in `ItemDrawer` via `useItemDrawer().open(id)`
 
 ## History
 
