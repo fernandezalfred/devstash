@@ -150,13 +150,6 @@ export function Sidebar({
                   <span className="flex-1 truncate">{collection.name}</span>
                 </Link>
               ))}
-
-              <Link
-                href="/collections"
-                className="mt-1 flex items-center gap-1 rounded-md px-2 py-1.5 text-sm font-semibold text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
-              >
-                View all collections →
-              </Link>
             </>
           )}
         </div>

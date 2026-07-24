@@ -390,5 +390,5 @@ Refer to the screenshots below as a base for the dashboard UI. It does not have 
 | `/items/images`     | Image list (Pro)                       |
 | `/collections`      | All collections                        |
 | `/collections/[id]` | Single collection                      |
-| `/settings`         | Profile, billing, preferences          |
+| `/profile`          | Profile, billing, preferences          |
 | `/api/*`            | Items, uploads, AI, auth               |
