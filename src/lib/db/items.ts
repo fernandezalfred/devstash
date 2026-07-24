@@ -1,6 +1,8 @@
 // Dashboard item data, fetched from the database via Prisma.
 // Replaces the mock items in @/lib/mock-data for the dashboard main area.
 
+import { cache } from "react";
+
 import { prisma } from "@/lib/prisma";
 
 // No auth yet — the dashboard is scoped to the seeded demo user. Swap this for
@@ -113,35 +115,39 @@ const SYSTEM_TYPE_ORDER = [
 ];
 
 // System item types with the demo user's item count for each, ordered for the
-// sidebar. Types with no items still appear (count 0).
-export async function getSidebarItemTypes(): Promise<SidebarItemType[]> {
-  const [types, counts] = await Promise.all([
-    prisma.itemType.findMany({ where: { isSystem: true, userId: null } }),
-    prisma.item.groupBy({
-      by: ["itemTypeId"],
-      where: { user: { email: DEMO_USER_EMAIL } },
-      _count: { _all: true },
-    }),
-  ]);
+// sidebar. Types with no items still appear (count 0). Wrapped in React's
+// cache() so the layout (sidebar) and page (main grid) share one query per
+// request instead of issuing it twice.
+export const getSidebarItemTypes = cache(
+  async (): Promise<SidebarItemType[]> => {
+    const [types, counts] = await Promise.all([
+      prisma.itemType.findMany({ where: { isSystem: true, userId: null } }),
+      prisma.item.groupBy({
+        by: ["itemTypeId"],
+        where: { user: { email: DEMO_USER_EMAIL } },
+        _count: { _all: true },
+      }),
+    ]);
 
-  const countByTypeId = new Map(
-    counts.map((entry) => [entry.itemTypeId, entry._count._all]),
-  );
+    const countByTypeId = new Map(
+      counts.map((entry) => [entry.itemTypeId, entry._count._all]),
+    );
 
-  return types
-    .sort(
-      (a, b) =>
-        SYSTEM_TYPE_ORDER.indexOf(a.name) - SYSTEM_TYPE_ORDER.indexOf(b.name),
-    )
-    .map((type) => ({
-      id: type.id,
-      name: type.name.charAt(0).toUpperCase() + type.name.slice(1),
-      slug: `${type.name}s`,
-      icon: type.icon,
-      color: type.color,
-      itemCount: countByTypeId.get(type.id) ?? 0,
-    }));
-}
+    return types
+      .sort(
+        (a, b) =>
+          SYSTEM_TYPE_ORDER.indexOf(a.name) - SYSTEM_TYPE_ORDER.indexOf(b.name),
+      )
+      .map((type) => ({
+        id: type.id,
+        name: type.name.charAt(0).toUpperCase() + type.name.slice(1),
+        slug: `${type.name}s`,
+        icon: type.icon,
+        color: type.color,
+        itemCount: countByTypeId.get(type.id) ?? 0,
+      }));
+  },
+);
 
 export interface ItemsByType {
   // The resolved system item type for the slug, or null when the slug doesn't

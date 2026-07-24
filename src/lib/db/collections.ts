@@ -1,6 +1,8 @@
 // Dashboard collection data, fetched from the database via Prisma.
 // Replaces the mock collections in @/lib/mock-data for the dashboard main area.
 
+import { cache } from "react";
+
 import { prisma } from "@/lib/prisma";
 
 // No auth yet — the dashboard is scoped to the seeded demo user. Swap this for
@@ -25,55 +27,59 @@ export interface DashboardCollection {
   accentColor: string | null; // dominant (most-used) type's color
 }
 
-// Recent collections for the dashboard, most recently updated first.
-export async function getDashboardCollections(): Promise<DashboardCollection[]> {
-  const collections = await prisma.collection.findMany({
-    where: { user: { email: DEMO_USER_EMAIL } },
-    orderBy: { updatedAt: "desc" },
-    include: {
-      items: {
-        // The 7 system types are constant, so only pull the fields the card
-        // needs instead of every column of itemType for every item.
-        select: {
-          item: {
-            select: {
-              itemType: {
-                select: { id: true, name: true, icon: true, color: true },
+// Recent collections for the dashboard, most recently updated first. Wrapped
+// in React's cache() so the layout (sidebar) and page (main grid) share one
+// query per request instead of issuing it twice.
+export const getDashboardCollections = cache(
+  async (): Promise<DashboardCollection[]> => {
+    const collections = await prisma.collection.findMany({
+      where: { user: { email: DEMO_USER_EMAIL } },
+      orderBy: { updatedAt: "desc" },
+      include: {
+        items: {
+          // The 7 system types are constant, so only pull the fields the card
+          // needs instead of every column of itemType for every item.
+          select: {
+            item: {
+              select: {
+                itemType: {
+                  select: { id: true, name: true, icon: true, color: true },
+                },
               },
             },
           },
         },
       },
-    },
-  });
+    });
 
-  return collections.map((collection) => {
-    // Tally items per type to find the distinct types present and the dominant
-    // one (drives the card's accent color).
-    const counts = new Map<
-      string,
-      { type: CollectionTypeSummary; count: number }
-    >();
-    for (const { item } of collection.items) {
-      const { id, name, icon, color } = item.itemType;
-      const existing = counts.get(id);
-      if (existing) {
-        existing.count += 1;
-      } else {
-        counts.set(id, { type: { id, name, icon, color }, count: 1 });
+    return collections.map((collection) => {
+      // Tally items per type to find the distinct types present and the
+      // dominant one (drives the card's accent color).
+      const counts = new Map<
+        string,
+        { type: CollectionTypeSummary; count: number }
+      >();
+      for (const { item } of collection.items) {
+        const { id, name, icon, color } = item.itemType;
+        const existing = counts.get(id);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          counts.set(id, { type: { id, name, icon, color }, count: 1 });
+        }
       }
-    }
 
-    const ranked = [...counts.values()].sort((a, b) => b.count - a.count);
+      const ranked = [...counts.values()].sort((a, b) => b.count - a.count);
 
-    return {
-      id: collection.id,
-      name: collection.name,
-      description: collection.description,
-      isFavorite: collection.isFavorite,
-      itemCount: collection.items.length,
-      types: ranked.map((entry) => entry.type),
-      accentColor: ranked[0]?.type.color ?? null,
-    };
-  });
-}
+      return {
+        id: collection.id,
+        name: collection.name,
+        description: collection.description,
+        isFavorite: collection.isFavorite,
+        itemCount: collection.items.length,
+        types: ranked.map((entry) => entry.type),
+        accentColor: ranked[0]?.type.color ?? null,
+      };
+    });
+  },
+);

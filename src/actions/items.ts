@@ -23,7 +23,12 @@ const updateItemSchema = z.object({
   description: z.preprocess(emptyToNull, z.string().nullable()).optional(),
   content: z.preprocess(emptyToNull, z.string().nullable()).optional(),
   language: z.preprocess(emptyToNull, z.string().nullable()).optional(),
-  url: z.preprocess(emptyToNull, z.url("Enter a valid URL").nullable()).optional(),
+  url: z
+    .preprocess(
+      emptyToNull,
+      z.url({ protocol: /^https?$/, error: "Enter a valid URL" }).nullable(),
+    )
+    .optional(),
   tags: z.array(z.string().trim().min(1)).default([]),
 });
 
@@ -99,7 +104,7 @@ const createItemSchema = z
     if (data.type !== "link") return;
     if (!data.url) {
       ctx.addIssue({ code: "custom", path: ["url"], message: "URL is required" });
-    } else if (!z.url().safeParse(data.url).success) {
+    } else if (!z.url({ protocol: /^https?$/ }).safeParse(data.url).success) {
       ctx.addIssue({ code: "custom", path: ["url"], message: "Enter a valid URL" });
     }
   });
