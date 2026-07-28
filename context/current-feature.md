@@ -1,16 +1,27 @@
-# Current Feature
+# Current Feature: Collections Pages
 
 ## status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- What success looks like -->
+- New `/collections` page — a list of the signed-in user's collections, reusing the existing `CollectionsGrid`/`CollectionCard` components already used on the dashboard.
+- New `/collections/[id]` page — shows a single collection's items (name, description, item count as a header; items below), reusing the existing item card components rather than building new ones.
+- Sidebar: add back a "View all collections" link (removed in the 2026-07-24 cleanup because the route didn't exist yet) pointing at `/collections`.
+- Collection cards on the dashboard (and now `/collections`) link to their specific `/collections/[id]` page.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- **Confirmed via codebase research before writing this spec:** the sidebar's per-collection rows and `CollectionCard` **already** link to `/collections/${collection.id}` — that part of the ask is effectively already done, just currently 404ing since the route doesn't exist. Only the bare "View all collections" link (to the plain `/collections` index) was actually removed in the 2026-07-24 cleanup and needs to be re-added now that the destination will exist.
+- **Scoping:** `/collections` and `/collections/[id]` follow `getDashboardCollections`'s existing real-user-scoped pattern (`{ userId: session.user.id }`) — consistent with the Collection Create feature. Items are still demo-scoped (unchanged), so a collection detail page only shows items when the collection is demo-owned and was linked to items via the item form's picker (built in the last feature) — for a real (non-demo) account's own new collection, the page will correctly show 0 items until items de-demo. This is a known, already-documented tension, not a new bug to solve here.
+- **New DB functions needed:**
+  - `src/lib/db/collections.ts`: a real-user-scoped `getCollectionDetail(id, userId)`-style lookup (ownership check + `name`/`description`/`isFavorite`) — returns `null` when the collection doesn't exist or isn't owned by the signed-in user, so the page can `notFound()`.
+  - `src/lib/db/items.ts`: a `getItemsByCollection(collectionId)`-style query (demo-scoped, matching every other item read in this file) that returns `DashboardItem[]` via the existing `itemInclude`/`toDashboardItem` — filtered through the `ItemCollection` join (no existing helper does this; every current item query is by type or by id, never by collection).
+- **Rendering "use the existing cards":** a collection can mix item types, unlike `/items/[type]` (always single-type). Plan: mirror `/items/[type]/page.tsx`'s per-type switch — group the collection's items by type and render each group with its existing treatment (`ItemCard` grid for most types, `ImageCard` grid for images, `FileRow` divided list for files) rather than collapsing everything into one `ItemCard` grid. Flagging this as the interpretation of "existing cards" (plural) — open to collapsing to a single uniform grid if that's not what's wanted, cheaper to change at start than to guess wrong on data-scoping.
+- `src/proxy.ts`'s matcher needs `/collections/:path*` added (currently only guards `/dashboard`, `/items`, `/profile`) so unauthenticated users get redirected like every other protected route.
+- No schema/migration needed — `Collection`/`ItemCollection` already have everything required.
+- No new Server Action/utility logic (this is read-only server-component pages), so no dedicated unit tests expected — consistent with the "no tests for `src/lib/db/*` reads" convention established in prior features.
 
 ## History
 

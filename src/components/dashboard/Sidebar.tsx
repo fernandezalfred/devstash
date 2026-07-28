@@ -150,6 +150,13 @@ export function Sidebar({
                   <span className="flex-1 truncate">{collection.name}</span>
                 </Link>
               ))}
+
+              <Link
+                href="/collections"
+                className="block px-2 py-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              >
+                View all collections &rarr;
+              </Link>
             </>
           )}
         </div>

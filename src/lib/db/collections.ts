@@ -90,6 +90,27 @@ export const getDashboardCollections = cache(
   },
 );
 
+export interface CollectionDetail {
+  id: string;
+  name: string;
+  description: string | null;
+  isFavorite: boolean;
+}
+
+// A single collection's metadata for the /collections/[id] page, scoped to the
+// given (authenticated) user — matches getDashboardCollections's scoping.
+// Returns null when the collection doesn't exist or isn't owned by that user,
+// so the page can 404 rather than leaking another user's collection.
+export async function getCollectionDetail(
+  id: string,
+  userId: string,
+): Promise<CollectionDetail | null> {
+  return prisma.collection.findFirst({
+    where: { id, userId },
+    select: { id: true, name: true, description: true, isFavorite: true },
+  });
+}
+
 export interface CollectionOption {
   id: string;
   name: string;
