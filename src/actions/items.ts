@@ -30,6 +30,7 @@ const updateItemSchema = z.object({
     )
     .optional(),
   tags: z.array(z.string().trim().min(1)).default([]),
+  collectionIds: z.array(z.string()).default([]),
 });
 
 export type UpdateItemInput = z.input<typeof updateItemSchema>;
@@ -58,7 +59,8 @@ export async function updateItem(
     };
   }
 
-  const { title, description, content, language, url, tags } = parsed.data;
+  const { title, description, content, language, url, tags, collectionIds } =
+    parsed.data;
 
   try {
     const item = await updateItemQuery(itemId, {
@@ -68,6 +70,7 @@ export async function updateItem(
       language: language ?? null,
       url: url ?? null,
       tags,
+      collectionIds,
     });
     if (!item) {
       return { success: false, error: "Item not found." };
@@ -99,6 +102,7 @@ const createItemSchema = z
     language: z.preprocess(emptyToNull, z.string().nullable()).optional(),
     url: z.preprocess(emptyToNull, z.string().nullable()).optional(),
     tags: z.array(z.string().trim().min(1)).default([]),
+    collectionIds: z.array(z.string()).default([]),
   })
   .superRefine((data, ctx) => {
     if (data.type !== "link") return;
@@ -129,7 +133,8 @@ export async function createItem(
     };
   }
 
-  const { type, title, description, content, language, url, tags } = parsed.data;
+  const { type, title, description, content, language, url, tags, collectionIds } =
+    parsed.data;
 
   try {
     const item = await createItemQuery({
@@ -140,6 +145,7 @@ export async function createItem(
       language: language ?? null,
       url: url ?? null,
       tags,
+      collectionIds,
     });
     if (!item) {
       return { success: false, error: "Invalid item type." };

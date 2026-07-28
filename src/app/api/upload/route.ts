@@ -13,8 +13,8 @@ import {
 // Upload a file/image and create its item in one request, so a failed create
 // never leaves an orphaned R2 object (and a stored key always has an object).
 // multipart/form-data fields: file, type ("file" | "image"), title, and
-// optional description / tags (comma-separated). An API route (not a server
-// action) so the client can track upload progress via XHR.
+// optional description / tags / collectionIds (comma-separated). An API route
+// (not a server action) so the client can track upload progress via XHR.
 
 const fieldsSchema = z.object({
   type: z.enum(["file", "image"]),
@@ -31,6 +31,15 @@ const fieldsSchema = z.object({
       value
         .split(",")
         .map((tag) => tag.trim())
+        .filter(Boolean),
+    ),
+  collectionIds: z
+    .string()
+    .default("")
+    .transform((value) =>
+      value
+        .split(",")
+        .map((id) => id.trim())
         .filter(Boolean),
     ),
 });
@@ -57,6 +66,7 @@ export async function POST(request: Request) {
     title: formData.get("title"),
     description: formData.get("description") ?? "",
     tags: formData.get("tags") ?? "",
+    collectionIds: formData.get("collectionIds") ?? "",
   });
   if (!parsed.success) {
     return errorResponse(
@@ -64,7 +74,7 @@ export async function POST(request: Request) {
       400,
     );
   }
-  const { type, title, description, tags } = parsed.data;
+  const { type, title, description, tags, collectionIds } = parsed.data;
 
   const file = formData.get("file");
   if (!(file instanceof File)) {
@@ -101,6 +111,7 @@ export async function POST(request: Request) {
       fileName: file.name,
       fileSize: file.size,
       tags,
+      collectionIds,
     });
     if (!item) {
       // Unknown type shouldn't happen past Zod, but never strand the object.

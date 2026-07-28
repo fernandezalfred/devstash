@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { getDashboardCollections } from "@/lib/db/collections";
+import {
+  getCollectionsForPicker,
+  getDashboardCollections,
+} from "@/lib/db/collections";
 import { getSidebarItemTypes } from "@/lib/db/items";
 import { getCurrentUser } from "@/lib/db/users";
 
@@ -20,13 +23,19 @@ export default async function DashboardLayout({
   // null below (and to cover any session/DB drift).
   if (!user) redirect("/sign-in");
 
-  const [itemTypes, collections] = await Promise.all([
+  const [itemTypes, collections, collectionOptions] = await Promise.all([
     getSidebarItemTypes(),
     getDashboardCollections(user.id),
+    getCollectionsForPicker(),
   ]);
 
   return (
-    <DashboardShell itemTypes={itemTypes} collections={collections} user={user}>
+    <DashboardShell
+      itemTypes={itemTypes}
+      collections={collections}
+      collectionOptions={collectionOptions}
+      user={user}
+    >
       {children}
     </DashboardShell>
   );

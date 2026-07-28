@@ -288,6 +288,18 @@ export async function getItemDetail(id: string): Promise<ItemDetail | null> {
   return toItemDetail(item);
 }
 
+// Narrows client-submitted collection ids down to ones that actually belong to
+// the demo user (matching item ownership — see the picker scoping note in
+// src/lib/db/collections.ts), silently dropping the rest rather than erroring.
+async function resolveCollectionIds(ids: string[]): Promise<string[]> {
+  if (ids.length === 0) return [];
+  const owned = await prisma.collection.findMany({
+    where: { id: { in: ids }, user: { email: DEMO_USER_EMAIL } },
+    select: { id: true },
+  });
+  return owned.map((c) => c.id);
+}
+
 // Fields an item edit can change. Type-specific fields (content/language/url)
 // are always present in the payload but null for types that don't use them.
 export interface UpdateItemData {
@@ -297,13 +309,17 @@ export interface UpdateItemData {
   url: string | null;
   language: string | null;
   tags: string[];
+  collectionIds: string[];
 }
 
 // Update an item and return its fresh ItemDetail (so the drawer can refresh
 // without a second fetch), or null when the item isn't found under the demo
 // user. Demo-user-scoped to match getItemDetail — the calling server action
 // still requires an authenticated session. Tags are replaced wholesale:
-// disconnect all, then connect-or-create by unique name.
+// disconnect all, then connect-or-create by unique name. Collection
+// memberships are replaced wholesale too: ItemCollection is an explicit join
+// model, so that's a deleteMany + create on the join rows rather than
+// set/connectOrCreate.
 export async function updateItem(
   id: string,
   data: UpdateItemData,
@@ -313,6 +329,8 @@ export async function updateItem(
     select: { id: true },
   });
   if (!existing) return null;
+
+  const collectionIds = await resolveCollectionIds(data.collectionIds);
 
   const item = await prisma.item.update({
     where: { id },
@@ -328,6 +346,10 @@ export async function updateItem(
           where: { name },
           create: { name },
         })),
+      },
+      collections: {
+        deleteMany: {},
+        create: collectionIds.map((collectionId) => ({ collectionId })),
       },
     },
     include: itemDetailInclude,
@@ -373,12 +395,14 @@ export interface CreateItemData {
   url: string | null;
   language: string | null;
   tags: string[];
+  collectionIds: string[];
 }
 
 // Create an item under the demo user and return its ItemDetail, or null when
 // `type` isn't a system type. Demo-user-scoped to match the rest of the layer —
 // the calling action still requires an authenticated session. Tags are
-// connect-or-created by unique name.
+// connect-or-created by unique name; collectionIds are validated against the
+// demo user's own collections and linked via the ItemCollection join rows.
 export async function createItem(
   data: CreateItemData,
 ): Promise<ItemDetail | null> {
@@ -393,6 +417,8 @@ export async function createItem(
     select: { id: true },
   });
   if (!user) return null;
+
+  const collectionIds = await resolveCollectionIds(data.collectionIds);
 
   const item = await prisma.item.create({
     data: {
@@ -409,6 +435,9 @@ export async function createItem(
           where: { name },
           create: { name },
         })),
+      },
+      collections: {
+        create: collectionIds.map((collectionId) => ({ collectionId })),
       },
     },
     include: itemDetailInclude,
@@ -427,6 +456,7 @@ export interface CreateFileItemData {
   fileName: string;
   fileSize: number;
   tags: string[];
+  collectionIds: string[];
 }
 
 // Create a FILE-kind item under the demo user and return its ItemDetail, or
@@ -447,6 +477,8 @@ export async function createFileItem(
   });
   if (!user) return null;
 
+  const collectionIds = await resolveCollectionIds(data.collectionIds);
+
   const item = await prisma.item.create({
     data: {
       title: data.title,
@@ -462,6 +494,9 @@ export async function createFileItem(
           where: { name },
           create: { name },
         })),
+      },
+      collections: {
+        create: collectionIds.map((collectionId) => ({ collectionId })),
       },
     },
     include: itemDetailInclude,

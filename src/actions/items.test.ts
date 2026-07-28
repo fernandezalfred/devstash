@@ -129,6 +129,7 @@ describe("updateItem action — normalization", () => {
       language: null,
       url: null,
       tags: [],
+      collectionIds: [],
     });
   });
 
