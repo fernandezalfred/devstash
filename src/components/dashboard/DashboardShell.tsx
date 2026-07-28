@@ -6,7 +6,10 @@ import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { ItemDrawerProvider } from "@/components/items/ItemDrawer";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { type DashboardCollection } from "@/lib/db/collections";
+import {
+  type CollectionOption,
+  type DashboardCollection,
+} from "@/lib/db/collections";
 import { type SidebarItemType } from "@/lib/db/items";
 import { type CurrentUser } from "@/lib/db/users";
 import { cn } from "@/lib/utils";
@@ -19,11 +22,13 @@ export function DashboardShell({
   children,
   itemTypes,
   collections,
+  collectionOptions,
   user,
 }: {
   children: React.ReactNode;
   itemTypes: SidebarItemType[];
   collections: DashboardCollection[];
+  collectionOptions: CollectionOption[];
   user: CurrentUser;
 }) {
   const isMobile = useIsMobile();
@@ -35,7 +40,11 @@ export function DashboardShell({
 
   return (
     <div className="flex h-screen flex-col">
-      <TopBar onToggleSidebar={toggle} itemTypes={itemTypes} />
+      <TopBar
+        onToggleSidebar={toggle}
+        itemTypes={itemTypes}
+        collectionOptions={collectionOptions}
+      />
 
       <div className="flex flex-1 overflow-hidden">
         {/* Desktop: inline collapsible sidebar */}
@@ -67,7 +76,9 @@ export function DashboardShell({
         </div>
 
         <main className="flex-1 overflow-y-auto p-6">
-          <ItemDrawerProvider>{children}</ItemDrawerProvider>
+          <ItemDrawerProvider collectionOptions={collectionOptions}>
+            {children}
+          </ItemDrawerProvider>
         </main>
       </div>
     </div>

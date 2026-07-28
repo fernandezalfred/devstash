@@ -6,6 +6,7 @@ import { CreateCollectionDialog } from "@/components/dashboard/CreateCollectionD
 import { CreateItemDialog } from "@/components/items/CreateItemDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { type CollectionOption } from "@/lib/db/collections";
 import { type SidebarItemType } from "@/lib/db/items";
 
 // Top bar: brand, sidebar toggle, search field, and action buttons. Search
@@ -14,9 +15,11 @@ import { type SidebarItemType } from "@/lib/db/items";
 export function TopBar({
   onToggleSidebar,
   itemTypes = [],
+  collectionOptions = [],
 }: {
   onToggleSidebar?: () => void;
   itemTypes?: SidebarItemType[];
+  collectionOptions?: CollectionOption[];
 }) {
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
@@ -52,7 +55,7 @@ export function TopBar({
 
       <div className="flex items-center gap-2">
         <CreateCollectionDialog />
-        <CreateItemDialog types={itemTypes} />
+        <CreateItemDialog types={itemTypes} collections={collectionOptions} />
       </div>
     </header>
   );

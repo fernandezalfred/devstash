@@ -10,6 +10,7 @@ import {
   codeFallbackLanguage,
   isCodeEditorType,
 } from "@/components/items/CodeEditor";
+import { CollectionsPicker } from "@/components/items/CollectionsPicker";
 import { FileUpload } from "@/components/items/FileUpload";
 import {
   isMarkdownEditorType,
@@ -23,6 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
+import { type CollectionOption } from "@/lib/db/collections";
 import { type SidebarItemType } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
 import { isUploadKind } from "@/lib/uploads";
@@ -50,10 +52,12 @@ function emptyForm(type: string) {
 // picker (e.g. from a type page); `triggerLabel` customizes the trigger button.
 export function CreateItemDialog({
   types,
+  collections,
   initialType,
   triggerLabel = "New Item",
 }: {
   types: SidebarItemType[];
+  collections: CollectionOption[];
   initialType?: string;
   triggerLabel?: string;
 }) {
@@ -67,6 +71,7 @@ export function CreateItemDialog({
   const [form, setForm] = useState(() => emptyForm(startType));
   const [file, setFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [collectionIds, setCollectionIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
   // Single close/open path so the form also resets when we close programmatically
@@ -79,6 +84,7 @@ export function CreateItemDialog({
       setForm(emptyForm(startType));
       setFile(null);
       setUploadProgress(null);
+      setCollectionIds([]);
     }
   };
 
@@ -111,7 +117,7 @@ export function CreateItemDialog({
     setSubmitting(true);
 
     const result = isUpload
-      ? await uploadFileItem(form, file!, setUploadProgress)
+      ? await uploadFileItem(form, file!, collectionIds, setUploadProgress)
       : await createItem({
           type: form.type as never,
           title: form.title,
@@ -123,6 +129,7 @@ export function CreateItemDialog({
             .split(",")
             .map((tag) => tag.trim())
             .filter(Boolean),
+          collectionIds,
         });
     setSubmitting(false);
     setUploadProgress(null);
@@ -262,6 +269,14 @@ export function CreateItemDialog({
               onChange={(e) => set("tags", e.target.value)}
             />
           </Field>
+
+          <Field label="Collections" plain>
+            <CollectionsPicker
+              options={collections}
+              selected={collectionIds}
+              onChange={setCollectionIds}
+            />
+          </Field>
         </div>
 
         <div className="mt-6 flex justify-end gap-2">
@@ -291,6 +306,7 @@ type UploadResult =
 function uploadFileItem(
   form: ReturnType<typeof emptyForm>,
   file: File,
+  collectionIds: string[],
   onProgress: (pct: number) => void,
 ): Promise<UploadResult> {
   const data = new FormData();
@@ -299,6 +315,7 @@ function uploadFileItem(
   data.set("title", form.title);
   data.set("description", form.description);
   data.set("tags", form.tags);
+  data.set("collectionIds", collectionIds.join(","));
 
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();

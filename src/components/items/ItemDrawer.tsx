@@ -28,6 +28,7 @@ import {
   codeFallbackLanguage,
   isCodeEditorType,
 } from "@/components/items/CodeEditor";
+import { CollectionsPicker } from "@/components/items/CollectionsPicker";
 import {
   isMarkdownEditorType,
   MarkdownEditor,
@@ -47,6 +48,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/toast";
+import { type CollectionOption } from "@/lib/db/collections";
 import { type ItemDetail } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
 import { formatBytes } from "@/lib/uploads";
@@ -71,8 +73,10 @@ export function useItemDrawer(): ItemDrawerContextValue {
 
 export function ItemDrawerProvider({
   children,
+  collectionOptions,
 }: {
   children: React.ReactNode;
+  collectionOptions: CollectionOption[];
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [item, setItem] = useState<ItemDetail | null>(null);
@@ -134,6 +138,7 @@ export function ItemDrawerProvider({
               item={item}
               onUpdated={setItem}
               onClose={() => setOpenId(null)}
+              collectionOptions={collectionOptions}
             />
           )}
         </SheetContent>
@@ -154,10 +159,12 @@ function ItemDrawerBody({
   item,
   onUpdated,
   onClose,
+  collectionOptions,
 }: {
   item: ItemDetail;
   onUpdated: (item: ItemDetail) => void;
   onClose: () => void;
+  collectionOptions: CollectionOption[];
 }) {
   const Icon = itemTypeIcons[item.type.icon];
   const accent = item.type.color;
@@ -168,6 +175,7 @@ function ItemDrawerBody({
     return (
       <ItemEditForm
         item={item}
+        collectionOptions={collectionOptions}
         onCancel={() => setEditing(false)}
         onSaved={(updated) => {
           onUpdated(updated);
@@ -540,10 +548,12 @@ const inputClass =
 // Type-specific fields render only for the relevant item type.
 function ItemEditForm({
   item,
+  collectionOptions,
   onCancel,
   onSaved,
 }: {
   item: ItemDetail;
+  collectionOptions: CollectionOption[];
   onCancel: () => void;
   onSaved: (item: ItemDetail) => void;
 }) {
@@ -564,6 +574,9 @@ function ItemEditForm({
   const [language, setLanguage] = useState(item.language ?? "");
   const [url, setUrl] = useState(item.url ?? "");
   const [tagsInput, setTagsInput] = useState(item.tags.join(", "));
+  const [collectionIds, setCollectionIds] = useState(
+    item.collections.map((c) => c.id),
+  );
   const [saving, setSaving] = useState(false);
 
   const canSave = title.trim().length > 0 && !saving;
@@ -581,6 +594,7 @@ function ItemEditForm({
         .split(",")
         .map((tag) => tag.trim())
         .filter(Boolean),
+      collectionIds,
     });
     setSaving(false);
 
@@ -707,6 +721,14 @@ function ItemEditForm({
             className={inputClass}
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
+          />
+        </Field>
+
+        <Field label="Collections" plain>
+          <CollectionsPicker
+            options={collectionOptions}
+            selected={collectionIds}
+            onChange={setCollectionIds}
           />
         </Field>
       </div>

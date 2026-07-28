@@ -5,6 +5,14 @@ import { cache } from "react";
 
 import { prisma } from "@/lib/prisma";
 
+// Items are still created/edited under the demo user (see src/lib/db/items.ts),
+// so the item form's collection picker must list the demo user's own
+// collections to match — not the real signed-in user's (see
+// getDashboardCollections below, which is real-user-scoped for a different
+// caller). Duplicating this constant rather than sharing it with items.ts
+// matches the existing pattern there.
+const DEMO_USER_EMAIL = "demo@devstash.io";
+
 // A distinct item type present in a collection, with the bits the card needs.
 export interface CollectionTypeSummary {
   id: string;
@@ -78,6 +86,25 @@ export const getDashboardCollections = cache(
         types: ranked.map((entry) => entry.type),
         accentColor: ranked[0]?.type.color ?? null,
       };
+    });
+  },
+);
+
+export interface CollectionOption {
+  id: string;
+  name: string;
+}
+
+// Lightweight collection list for the item create/edit forms' picker,
+// demo-user-scoped to match item ownership (see the note above). Wrapped in
+// cache() since it's fetched once per relevant layout/page and again by any
+// type page that renders its own CreateItemDialog.
+export const getCollectionsForPicker = cache(
+  async (): Promise<CollectionOption[]> => {
+    return prisma.collection.findMany({
+      where: { user: { email: DEMO_USER_EMAIL } },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
     });
   },
 );

@@ -4,6 +4,7 @@ import { CreateItemDialog } from "@/components/items/CreateItemDialog";
 import { FileRow } from "@/components/items/FileRow";
 import { ImageCard } from "@/components/items/ImageCard";
 import { ItemCard } from "@/components/items/ItemCard";
+import { getCollectionsForPicker } from "@/lib/db/collections";
 import { getItemsByType, getSidebarItemTypes } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
 
@@ -17,9 +18,10 @@ export default async function ItemsByTypePage({
   params: Promise<{ type: string }>;
 }) {
   const { type: slug } = await params;
-  const [{ type, items }, sidebarTypes] = await Promise.all([
+  const [{ type, items }, sidebarTypes, collectionOptions] = await Promise.all([
     getItemsByType(slug),
     getSidebarItemTypes(),
+    getCollectionsForPicker(),
   ]);
 
   // Unknown type slug (not one of the system types) → 404.
@@ -47,6 +49,7 @@ export default async function ItemsByTypePage({
         </div>
         <CreateItemDialog
           types={sidebarTypes}
+          collections={collectionOptions}
           initialType={type.name.toLowerCase()}
           triggerLabel={`New ${type.name}`}
         />

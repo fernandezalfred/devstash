@@ -1,16 +1,24 @@
-# Current Feature
+# Current Feature: Add Item To Collections
 
 ## status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- What success looks like -->
+- Let a user add an item to one or more collections directly from the **new item** modal (`CreateItemDialog`) and the **edit item** form (`ItemEditForm` in `ItemDrawer.tsx`) — a multi-select input listing the available collections.
+- On create: the selected collections are linked to the new item immediately (no separate save step).
+- On edit: Save replaces the item's collection memberships with whatever is currently selected (same "wholesale replace" pattern already used for tags).
+- Collection **detail/list pages are explicitly out of scope** — this feature is only the picker input + the underlying `ItemCollection` linkage, not anything that renders a collection's contents.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- **Scoping decision (confirmed explicitly by the user at load time):** items are still created/edited under the hardcoded **demo user** (`createItem`/`updateItem` in `src/lib/db/items.ts` — unchanged by the last feature), while `getDashboardCollections` was migrated to the **real authenticated user** in the Collection Create feature. The picker must list the **demo user's own collections** (matching the item's actual owner), not the signed-in user's collections — keeps ownership consistent, at the cost of the picker only being populated/usable while signed in as the demo account until items de-demo. Needs a new demo-scoped query (e.g. `getCollectionsForPicker()` in `src/lib/db/collections.ts`, id+name only) — deliberately separate from `getDashboardCollections` in the same file, which is now real-user-scoped for a different caller. Some duplication of the demo-email constant across `items.ts`/`collections.ts` is consistent with the existing pattern (neither file currently shares that constant).
+- **No deviation this time** — unlike Collection Create, this feature should follow the default convention: extend the existing `createItem`/`updateItem` **Server Actions** in `src/actions/items.ts` (add an optional `collectionIds: string[]`), not a new API route.
+- **DB layer:** extend `CreateItemData`/`UpdateItemData` in `src/lib/db/items.ts` with `collectionIds: string[]`. `ItemCollection` is an **explicit** join model (not an implicit m2n), so nested writes need `create`/`deleteMany` on the join rows rather than `connect`/`disconnect`. Validate submitted ids server-side against the demo user's actual collections before connecting (don't trust client-supplied ids blindly — silently drop any that don't belong rather than erroring). No schema/migration needed — `ItemCollection` already exists.
+- **UI:** no Select/Combobox primitive exists in this repo (the item-type picker deliberately used segmented buttons instead of adding one — 2026-07-08 item-create history entry). Plan to reuse that reasoning: a simple checkbox list (scrollable if it grows past a handful) rather than pulling in a UI-kit dependency.
+- **Plumbing:** `CreateItemDialog` and `ItemDrawer` are client components rendered from server components (`DashboardShell`, `/items/[type]/page.tsx`, `ItemDrawerProvider`) that already thread `itemTypes`/`collections` down similarly — the new demo-scoped collections list will need the same treatment (fetch once per request, pass as a prop through the same paths `itemTypes` already takes).
+- **Assumption to confirm at start:** this applies to all 7 creatable/uploadable types, including **file/image**, whose create path is entirely separate (`POST /api/upload` → `createFileItem`, not the `createItem` Server Action) — so file/image needs its own `collectionIds` plumbing through `FileUpload`/the upload route/`createFileItem` if this assumption holds. Flagged here rather than asked up front since it's a smaller, correctable decision relative to the scoping question above; revisit if the user intended text/link types only.
 
 ## History
 
