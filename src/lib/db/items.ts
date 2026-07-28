@@ -187,6 +187,24 @@ export async function getItemsByType(slug: string): Promise<ItemsByType> {
   };
 }
 
+// Items linked to a collection (via the ItemCollection join), most recently
+// updated first. Demo-scoped like every other item read in this file — a
+// collection's items only ever show up here if it's the demo user's own
+// collection with items linked through the item form's picker.
+export async function getItemsByCollection(
+  collectionId: string,
+): Promise<DashboardItem[]> {
+  const items = await prisma.item.findMany({
+    where: {
+      user: { email: DEMO_USER_EMAIL },
+      collections: { some: { collectionId } },
+    },
+    orderBy: { updatedAt: "desc" },
+    include: itemInclude,
+  });
+  return items.map(toDashboardItem);
+}
+
 // Full detail for a single item, loaded on demand when the drawer opens.
 // Extends the card-level fields with content, url, language, collections, and
 // timestamps that the list views don't need.
