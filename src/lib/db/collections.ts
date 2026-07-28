@@ -5,10 +5,6 @@ import { cache } from "react";
 
 import { prisma } from "@/lib/prisma";
 
-// No auth yet — the dashboard is scoped to the seeded demo user. Swap this for
-// the authenticated session user once NextAuth is wired up.
-const DEMO_USER_EMAIL = "demo@devstash.io";
-
 // A distinct item type present in a collection, with the bits the card needs.
 export interface CollectionTypeSummary {
   id: string;
@@ -27,13 +23,15 @@ export interface DashboardCollection {
   accentColor: string | null; // dominant (most-used) type's color
 }
 
-// Recent collections for the dashboard, most recently updated first. Wrapped
-// in React's cache() so the layout (sidebar) and page (main grid) share one
-// query per request instead of issuing it twice.
+// Recent collections for the dashboard, most recently updated first, scoped
+// to the given (authenticated) user — see createCollection below for the
+// matching scoping. Wrapped in React's cache() so the layout (sidebar) and
+// page (main grid) share one query per request instead of issuing it twice
+// (cache() keys on arguments, so this still dedupes correctly per userId).
 export const getDashboardCollections = cache(
-  async (): Promise<DashboardCollection[]> => {
+  async (userId: string): Promise<DashboardCollection[]> => {
     const collections = await prisma.collection.findMany({
-      where: { user: { email: DEMO_USER_EMAIL } },
+      where: { userId },
       orderBy: { updatedAt: "desc" },
       include: {
         items: {
@@ -83,3 +81,19 @@ export const getDashboardCollections = cache(
     });
   },
 );
+
+// Create a collection owned by the given (authenticated) user.
+export async function createCollection(
+  userId: string,
+  input: { name: string; description: string | null },
+): Promise<{ id: string; name: string; description: string | null }> {
+  const collection = await prisma.collection.create({
+    data: {
+      name: input.name,
+      description: input.description,
+      userId,
+    },
+    select: { id: true, name: true, description: true },
+  });
+  return collection;
+}

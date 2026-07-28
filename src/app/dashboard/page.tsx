@@ -1,7 +1,10 @@
+import { redirect } from "next/navigation";
+
 import { CollectionsGrid } from "@/components/dashboard/CollectionsGrid";
 import { PinnedItems } from "@/components/dashboard/PinnedItems";
 import { RecentItems } from "@/components/dashboard/RecentItems";
 import { StatsCards } from "@/components/dashboard/StatsCards";
+import { auth } from "@/auth";
 import { getDashboardCollections } from "@/lib/db/collections";
 import {
   getItemStats,
@@ -14,8 +17,13 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
+  // The layout already redirects unauthenticated users, but guard here too so
+  // getDashboardCollections always gets a real userId.
+  const session = await auth();
+  if (!session?.user?.id) redirect("/sign-in");
+
   const [collections, pinnedItems, recentItems, itemStats] = await Promise.all([
-    getDashboardCollections(),
+    getDashboardCollections(session.user.id),
     getPinnedItems(),
     getRecentItems(),
     getItemStats(),

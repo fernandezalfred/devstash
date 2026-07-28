@@ -14,15 +14,16 @@ export default async function DashboardLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [itemTypes, collections, user] = await Promise.all([
-    getSidebarItemTypes(),
-    getDashboardCollections(),
-    getCurrentUser(),
-  ]);
+  const user = await getCurrentUser();
 
   // The proxy already guards /dashboard, but guard here too so `user` is never
   // null below (and to cover any session/DB drift).
   if (!user) redirect("/sign-in");
+
+  const [itemTypes, collections] = await Promise.all([
+    getSidebarItemTypes(),
+    getDashboardCollections(user.id),
+  ]);
 
   return (
     <DashboardShell itemTypes={itemTypes} collections={collections} user={user}>

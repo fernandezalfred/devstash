@@ -1,16 +1,28 @@
-# Current Feature
+# Current Feature: Collection Create
 
 ## status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- What success looks like -->
+- Wire up the top bar's disabled **New Collection** button (`TopBar.tsx`) to open a modal for creating a collection, mirroring the existing **New Item** flow (`CreateItemDialog`).
+- Modal fields: `name` (required) and `description` (optional) — matches the `Collection` schema (no other user-editable fields at create time).
+- On submit: create the collection, show a success toast, close the modal, and refresh so it appears immediately (sidebar "recents"/"favorites" lists and the dashboard collections grid) without a manual page reload.
+- On failure: show an error toast and keep the modal open with the entered values intact (same as item create).
 
 ## Notes
 
-<!-- Additional context, constraints, or details -->
+- **Follow the item-create patterns** (`feature/item-create`, 2026-07-08 history entry): a shadcn `Dialog` modal, controlled local form state (no form library), Create disabled until required fields are filled, Cancel button, toast on success/failure, `router.refresh()` on success.
+- **Explicit deviation requested by the user — do not default to Server Actions:**
+  - Server components/pages continue to read via `lib/db/*` functions directly (as today).
+  - The client-side create call goes through a **new API route** (e.g. `POST /api/collections`), not a Server Action. This differs from every other mutation so far (`updateItem`/`deleteItem`/`createItem` are all Server Actions in `src/actions/items.ts`) — confirmed explicitly by the user for this feature, so no server action should be added for collection create.
+- **Explicit deviation requested by the user — collections are user-scoped, not demo-scoped:**
+  - Unlike the rest of the data layer (items, dashboard, sidebar, existing `getDashboardCollections`), the new collection-create path should use the real authenticated user (via `auth()`) rather than the hardcoded demo user.
+  - Only the *create* path is in scope here — existing collection reads (`getDashboardCollections`, sidebar) remain demo-scoped unless the user asks to migrate those too. Worth flagging during implementation: a real-user-owned collection will coexist with demo-user-owned items, and the sidebar/dashboard collection reads won't show a non-demo user's new collection until/unless those reads are also migrated — confirm scope with the user if this creates a confusing "created but not visible" result for a non-demo signed-in account.
+- New DB function(s) needed in `src/lib/db/collections.ts` (e.g. `createCollection`), following the existing shape/return conventions in that file.
+- No schema/migration expected — `Collection.name`/`description` already exist on the model.
+- **Pre-existing uncommitted working-tree changes on `main`** (not part of this feature, discovered at load time): modified `CodeEditor.tsx`, `CreateItemDialog.tsx`, `ItemCard.tsx`, `ItemDrawer.tsx`, `MarkdownEditor.tsx`, plus new untracked `ItemFormField.tsx`, `ItemTypeFields.tsx`, `use-copy-to-clipboard.ts` — looks like an in-progress extraction/refactor from a prior session that was never committed. Flag to the user before branching for this feature so that work isn't silently carried into (or lost from) the new branch.
 
 ## History
 

@@ -1,15 +1,16 @@
 "use client";
 
-import { FolderPlus, PanelLeft, Search, Sparkles } from "lucide-react";
+import { PanelLeft, Search, Sparkles } from "lucide-react";
 
+import { CreateCollectionDialog } from "@/components/dashboard/CreateCollectionDialog";
 import { CreateItemDialog } from "@/components/items/CreateItemDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type SidebarItemType } from "@/lib/db/items";
 
-// Top bar: brand, sidebar toggle, search field, and action buttons. Search and
-// New Collection stay display-only until later phases; the sidebar toggle is
-// wired to the dashboard shell and New Item opens the create modal.
+// Top bar: brand, sidebar toggle, search field, and action buttons. Search
+// stays display-only until a later phase; the sidebar toggle is wired to the
+// dashboard shell, and New Collection / New Item open their create modals.
 export function TopBar({
   onToggleSidebar,
   itemTypes = [],
@@ -50,10 +51,7 @@ export function TopBar({
       </div>
 
       <div className="flex items-center gap-2">
-        <Button variant="outline" size="sm" disabled>
-          <FolderPlus className="size-4" />
-          <span className="hidden sm:inline">New Collection</span>
-        </Button>
+        <CreateCollectionDialog />
         <CreateItemDialog types={itemTypes} />
       </div>
     </header>
