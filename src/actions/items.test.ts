@@ -108,6 +108,7 @@ describe("updateItem action — validation", () => {
     expect(mockedQuery).toHaveBeenCalledWith(
       "item-1",
       expect.objectContaining({ url: "https://example.com" }),
+      "user-1",
     );
   });
 });
@@ -122,15 +123,19 @@ describe("updateItem action — normalization", () => {
       url: "",
       tags: [],
     });
-    expect(mockedQuery).toHaveBeenCalledWith("item-1", {
-      title: "Title",
-      description: null,
-      content: null,
-      language: null,
-      url: null,
-      tags: [],
-      collectionIds: [],
-    });
+    expect(mockedQuery).toHaveBeenCalledWith(
+      "item-1",
+      {
+        title: "Title",
+        description: null,
+        content: null,
+        language: null,
+        url: null,
+        tags: [],
+        collectionIds: [],
+      },
+      "user-1",
+    );
   });
 
   it("trims the title and passes tags through", async () => {
@@ -138,6 +143,7 @@ describe("updateItem action — normalization", () => {
     expect(mockedQuery).toHaveBeenCalledWith(
       "item-1",
       expect.objectContaining({ title: "Padded", tags: ["a", "b"] }),
+      "user-1",
     );
   });
 });
@@ -178,7 +184,7 @@ describe("deleteItem action", () => {
   it("returns success when the item is deleted", async () => {
     const result = await deleteItem("item-1");
     expect(result).toEqual({ success: true });
-    expect(mockedDeleteQuery).toHaveBeenCalledWith("item-1");
+    expect(mockedDeleteQuery).toHaveBeenCalledWith("item-1", "user-1");
     expect(mockedDeleteFromR2).not.toHaveBeenCalled();
   });
 
@@ -265,6 +271,7 @@ describe("createItem action", () => {
     expect(result.success).toBe(true);
     expect(mockedCreateQuery).toHaveBeenCalledWith(
       expect.objectContaining({ type: "link", url: "https://example.com" }),
+      "user-1",
     );
   });
 
@@ -273,6 +280,7 @@ describe("createItem action", () => {
     expect(result).toEqual({ success: true, data: fakeItem });
     expect(mockedCreateQuery).toHaveBeenCalledWith(
       expect.objectContaining({ type: "snippet", url: null }),
+      "user-1",
     );
   });
 

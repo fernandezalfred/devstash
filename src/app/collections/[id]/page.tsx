@@ -51,7 +51,7 @@ export default async function CollectionDetailPage({
 
   const [collection, items] = await Promise.all([
     getCollectionDetail(id, session.user.id),
-    getItemsByCollection(id),
+    getItemsByCollection(id, session.user.id),
   ]);
 
   // Unknown id, or a collection that isn't owned by the signed-in user → 404

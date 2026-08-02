@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
+import { auth } from "@/auth";
 import { CreateItemDialog } from "@/components/items/CreateItemDialog";
 import { FileRow } from "@/components/items/FileRow";
 import { ImageCard } from "@/components/items/ImageCard";
@@ -18,10 +19,17 @@ export default async function ItemsByTypePage({
   params: Promise<{ type: string }>;
 }) {
   const { type: slug } = await params;
+
+  // The parent items/layout.tsx already redirects unauthenticated users, but
+  // this page has no local session read otherwise — add one so the queries
+  // below always get a real userId.
+  const session = await auth();
+  if (!session?.user?.id) redirect("/sign-in");
+
   const [{ type, items }, sidebarTypes, collectionOptions] = await Promise.all([
-    getItemsByType(slug),
-    getSidebarItemTypes(),
-    getCollectionsForPicker(),
+    getItemsByType(slug, session.user.id),
+    getSidebarItemTypes(session.user.id),
+    getCollectionsForPicker(session.user.id),
   ]);
 
   // Unknown type slug (not one of the system types) → 404.

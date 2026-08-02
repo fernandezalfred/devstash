@@ -40,8 +40,8 @@ type ActionResult =
   | { success: false; error: string };
 
 // Update an item the current user is allowed to edit. Validates with Zod,
-// requires an authenticated session, then delegates to the demo-scoped query
-// (see updateItem in lib/db/items.ts for the scoping note).
+// requires an authenticated session, then delegates to the query scoped to
+// that user.
 export async function updateItem(
   itemId: string,
   input: UpdateItemInput,
@@ -63,15 +63,19 @@ export async function updateItem(
     parsed.data;
 
   try {
-    const item = await updateItemQuery(itemId, {
-      title,
-      description: description ?? null,
-      content: content ?? null,
-      language: language ?? null,
-      url: url ?? null,
-      tags,
-      collectionIds,
-    });
+    const item = await updateItemQuery(
+      itemId,
+      {
+        title,
+        description: description ?? null,
+        content: content ?? null,
+        language: language ?? null,
+        url: url ?? null,
+        tags,
+        collectionIds,
+      },
+      session.user.id,
+    );
     if (!item) {
       return { success: false, error: "Item not found." };
     }
@@ -115,8 +119,8 @@ const createItemSchema = z
 
 export type CreateItemInput = z.input<typeof createItemSchema>;
 
-// Create an item. Requires an authenticated session; the query is demo-scoped
-// (see createItem in lib/db/items.ts for the scoping note).
+// Create an item. Requires an authenticated session; the query creates it
+// under that user.
 export async function createItem(
   input: CreateItemInput,
 ): Promise<ActionResult> {
@@ -137,16 +141,19 @@ export async function createItem(
     parsed.data;
 
   try {
-    const item = await createItemQuery({
-      type,
-      title,
-      description: description ?? null,
-      content: content ?? null,
-      language: language ?? null,
-      url: url ?? null,
-      tags,
-      collectionIds,
-    });
+    const item = await createItemQuery(
+      {
+        type,
+        title,
+        description: description ?? null,
+        content: content ?? null,
+        language: language ?? null,
+        url: url ?? null,
+        tags,
+        collectionIds,
+      },
+      session.user.id,
+    );
     if (!item) {
       return { success: false, error: "Invalid item type." };
     }
@@ -158,10 +165,10 @@ export async function createItem(
 
 type DeleteResult = { success: true } | { success: false; error: string };
 
-// Delete an item. Requires an authenticated session; the query is demo-scoped
-// (see deleteItem in lib/db/items.ts for the scoping note). For FILE items the
-// stored R2 object is removed after the row — best-effort, since the item is
-// already gone and an orphaned object is preferable to a failed delete.
+// Delete an item. Requires an authenticated session; the query is scoped to
+// that user. For FILE items the stored R2 object is removed after the row —
+// best-effort, since the item is already gone and an orphaned object is
+// preferable to a failed delete.
 export async function deleteItem(itemId: string): Promise<DeleteResult> {
   const session = await auth();
   if (!session?.user?.id) {
@@ -169,7 +176,7 @@ export async function deleteItem(itemId: string): Promise<DeleteResult> {
   }
 
   try {
-    const { deleted, fileKey } = await deleteItemQuery(itemId);
+    const { deleted, fileKey } = await deleteItemQuery(itemId, session.user.id);
     if (!deleted) {
       return { success: false, error: "Item not found." };
     }

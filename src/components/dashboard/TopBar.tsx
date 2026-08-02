@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { PanelLeft, Search, Sparkles } from "lucide-react";
 
 import { CreateCollectionDialog } from "@/components/dashboard/CreateCollectionDialog";
@@ -24,10 +25,12 @@ export function TopBar({
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
       <div className="flex items-center gap-1.5 font-semibold">
-        <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-          <Sparkles className="size-4" />
-        </span>
-        <span className="hidden text-sm sm:inline">DevStash</span>
+        <Link href="/dashboard" className="flex items-center gap-1.5">
+          <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <Sparkles className="size-4" />
+          </span>
+          <span className="hidden text-sm sm:inline">DevStash</span>
+        </Link>
         <Button
           variant="ghost"
           size="icon-sm"

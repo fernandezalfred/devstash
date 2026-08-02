@@ -1,18 +1,27 @@
-# Current Feature
+# Current Feature: Remove Demo User Scoping
 
 ## status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- What success looks like -->
+- Delete the `DEMO_USER_EMAIL = "demo@devstash.io"` constant from both `src/lib/db/items.ts` and `src/lib/db/collections.ts`.
+- Every item/collection read and write scopes to the real authenticated user (`userId`) instead — the same migration `getDashboardCollections`/`createCollection`/`getCollectionDetail` already went through in earlier features.
+- All call sites thread the already-available session/user id through — no new auth flow needed except one page that currently has none.
+- Existing Vitest suite updated to match the new query signatures.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
-
-## History
+- **Full inventory of `items.ts` functions needing a `userId` param** (all currently filter `{ user: { email: DEMO_USER_EMAIL } }` or resolve the demo user via `prisma.user.findUnique({ where: { email: DEMO_USER_EMAIL } })`): `getPinnedItems`, `getRecentItems`, `getSidebarItemTypes`, `getItemsByType`, `getItemsByCollection`, `getItemDetail`, `updateItem`, `deleteItem`, `createItem`, `createFileItem`, `getItemFile`, `getItemStats`, plus the internal `resolveCollectionIds` helper (used to validate submitted `collectionIds` — should validate against the real user's own collections instead of the demo user's).
+- **`getCollectionsForPicker()` in `collections.ts`** also becomes real-user-scoped. It was deliberately demo-scoped in the Add Item To Collections feature specifically to match items' demo ownership — now that items themselves are real-user-scoped, that reason no longer applies, so this collapses back to one scoping story everywhere.
+- **Call sites — 12 total, 11 already have a `userId` in scope, only one doesn't:**
+  - Already have `session`/`user` in scope (just need to pass `.id` through): `dashboard/page.tsx` (`getPinnedItems`/`getRecentItems`/`getItemStats`), `dashboard/layout.tsx` + `items/layout.tsx` + `collections/layout.tsx` (`getSidebarItemTypes`, `getCollectionsForPicker`), `collections/[id]/page.tsx` (`getItemsByCollection`), `api/items/[id]/route.ts` (`getItemDetail`), `api/items/[id]/download/route.ts` (`getItemFile`), `api/upload/route.ts` (`createFileItem`), and all three `src/actions/items.ts` actions (`updateItem`/`deleteItem`/`createItem` queries).
+  - **The one exception:** `src/app/items/[type]/page.tsx` has no local `auth()`/`getCurrentUser()` call today (relies entirely on the parent `items/layout.tsx` for the auth *redirect*, but never reads the session itself) — needs one added to get a `userId` for `getItemsByType`/`getCollectionsForPicker`.
+- **No data migration needed.** Every existing row in the dev DB is already owned by a real user id — the demo user's own id (`demo@devstash.io` is a real authenticated account, not a synthetic marker). Signing in as demo continues to show all the same seeded content exactly as before, just resolved by `session.user.id` instead of an email match. Any *other* real (non-demo) account will now correctly see 0 items/collections until they create their own — that's the intended outcome of this change, not a regression to fix.
+- **Explicitly out of scope (confirmed via codebase research), left untouched:** `prisma/seed.ts` (creates the demo user as a seed fixture — that's what a seed script does), `scripts/delete-non-demo-users.ts` and `scripts/test-db.ts` (standalone dev CLI utilities deliberately keyed to the demo account by name, unrelated to app query scoping).
+- **Tests:** `src/actions/items.test.ts` mocks `@/lib/db/items` and `@/auth` at the module boundary (no real DB touched) and already mocks a session with `user.id: "user-1"` — updating the `toHaveBeenCalledWith` assertions to include that id is mechanical, no test-strategy change.
+- No schema/migration needed. No Server Action/API-route architecture changes — this only changes internal query scoping, not how anything is called from the client.
 
 <!-- Keep this updated. Earliest to latest -->
 

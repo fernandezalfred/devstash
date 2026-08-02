@@ -5,10 +5,6 @@ import { cache } from "react";
 
 import { prisma } from "@/lib/prisma";
 
-// No auth yet — the dashboard is scoped to the seeded demo user. Swap this for
-// the authenticated session user once NextAuth is wired up.
-const DEMO_USER_EMAIL = "demo@devstash.io";
-
 export interface DashboardItem {
   id: string;
   title: string;
@@ -71,20 +67,23 @@ function toDashboardItem(item: ItemWithRelations): DashboardItem {
   };
 }
 
-// Pinned items for the demo user, most recently updated first.
-export async function getPinnedItems(): Promise<DashboardItem[]> {
+// Pinned items for the given user, most recently updated first.
+export async function getPinnedItems(userId: string): Promise<DashboardItem[]> {
   const items = await prisma.item.findMany({
-    where: { user: { email: DEMO_USER_EMAIL }, isPinned: true },
+    where: { userId, isPinned: true },
     orderBy: { updatedAt: "desc" },
     include: itemInclude,
   });
   return items.map(toDashboardItem);
 }
 
-// The most recently updated items for the demo user.
-export async function getRecentItems(limit = 10): Promise<DashboardItem[]> {
+// The most recently updated items for the given user.
+export async function getRecentItems(
+  userId: string,
+  limit = 10,
+): Promise<DashboardItem[]> {
   const items = await prisma.item.findMany({
-    where: { user: { email: DEMO_USER_EMAIL } },
+    where: { userId },
     orderBy: { updatedAt: "desc" },
     take: limit,
     include: itemInclude,
@@ -114,17 +113,18 @@ const SYSTEM_TYPE_ORDER = [
   "link",
 ];
 
-// System item types with the demo user's item count for each, ordered for the
+// System item types with the given user's item count for each, ordered for the
 // sidebar. Types with no items still appear (count 0). Wrapped in React's
 // cache() so the layout (sidebar) and page (main grid) share one query per
-// request instead of issuing it twice.
+// request instead of issuing it twice (cache() keys on arguments, so this
+// still dedupes correctly per userId).
 export const getSidebarItemTypes = cache(
-  async (): Promise<SidebarItemType[]> => {
+  async (userId: string): Promise<SidebarItemType[]> => {
     const [types, counts] = await Promise.all([
       prisma.itemType.findMany({ where: { isSystem: true, userId: null } }),
       prisma.item.groupBy({
         by: ["itemTypeId"],
-        where: { user: { email: DEMO_USER_EMAIL } },
+        where: { userId },
         _count: { _all: true },
       }),
     ]);
@@ -156,9 +156,13 @@ export interface ItemsByType {
   items: DashboardItem[];
 }
 
-// Items of a single system type for the demo user, most recently updated first,
-// plus the resolved type metadata. `slug` is the plural route slug ("snippets").
-export async function getItemsByType(slug: string): Promise<ItemsByType> {
+// Items of a single system type for the given user, most recently updated
+// first, plus the resolved type metadata. `slug` is the plural route slug
+// ("snippets").
+export async function getItemsByType(
+  slug: string,
+  userId: string,
+): Promise<ItemsByType> {
   // Route slugs are the pluralized type name; system type names are lowercase
   // singular ("snippet"). Strip the trailing "s" to recover the type name.
   const name = slug.replace(/s$/, "");
@@ -169,7 +173,7 @@ export async function getItemsByType(slug: string): Promise<ItemsByType> {
   if (!itemType) return { type: null, items: [] };
 
   const items = await prisma.item.findMany({
-    where: { user: { email: DEMO_USER_EMAIL }, itemTypeId: itemType.id },
+    where: { userId, itemTypeId: itemType.id },
     orderBy: { updatedAt: "desc" },
     include: itemInclude,
   });
@@ -187,16 +191,15 @@ export async function getItemsByType(slug: string): Promise<ItemsByType> {
   };
 }
 
-// Items linked to a collection (via the ItemCollection join), most recently
-// updated first. Demo-scoped like every other item read in this file — a
-// collection's items only ever show up here if it's the demo user's own
-// collection with items linked through the item form's picker.
+// Items linked to a collection (via the ItemCollection join), scoped to the
+// given user, most recently updated first.
 export async function getItemsByCollection(
   collectionId: string,
+  userId: string,
 ): Promise<DashboardItem[]> {
   const items = await prisma.item.findMany({
     where: {
-      user: { email: DEMO_USER_EMAIL },
+      userId,
       collections: { some: { collectionId } },
     },
     orderBy: { updatedAt: "desc" },
@@ -291,15 +294,14 @@ function toItemDetail(item: ItemWithDetail): ItemDetail {
   };
 }
 
-// Full detail for a single item, demo-user-scoped to match the list views
-// (getPinnedItems / getRecentItems / getItemsByType). Returns null when the item
-// doesn't exist under the demo user, so the API route can 404. Swap to the
-// authenticated session user once the rest of the data layer moves off the demo
-// user — until then, scoping to the session user here would 404 every card,
-// since the lists show demo items regardless of who is signed in.
-export async function getItemDetail(id: string): Promise<ItemDetail | null> {
+// Full detail for a single item, scoped to the given user. Returns null when
+// the item doesn't exist under that user, so the API route can 404.
+export async function getItemDetail(
+  id: string,
+  userId: string,
+): Promise<ItemDetail | null> {
   const item = await prisma.item.findFirst({
-    where: { id, user: { email: DEMO_USER_EMAIL } },
+    where: { id, userId },
     include: itemDetailInclude,
   });
   if (!item) return null;
@@ -307,12 +309,14 @@ export async function getItemDetail(id: string): Promise<ItemDetail | null> {
 }
 
 // Narrows client-submitted collection ids down to ones that actually belong to
-// the demo user (matching item ownership — see the picker scoping note in
-// src/lib/db/collections.ts), silently dropping the rest rather than erroring.
-async function resolveCollectionIds(ids: string[]): Promise<string[]> {
+// the given user, silently dropping the rest rather than erroring.
+async function resolveCollectionIds(
+  ids: string[],
+  userId: string,
+): Promise<string[]> {
   if (ids.length === 0) return [];
   const owned = await prisma.collection.findMany({
-    where: { id: { in: ids }, user: { email: DEMO_USER_EMAIL } },
+    where: { id: { in: ids }, userId },
     select: { id: true },
   });
   return owned.map((c) => c.id);
@@ -331,24 +335,23 @@ export interface UpdateItemData {
 }
 
 // Update an item and return its fresh ItemDetail (so the drawer can refresh
-// without a second fetch), or null when the item isn't found under the demo
-// user. Demo-user-scoped to match getItemDetail — the calling server action
-// still requires an authenticated session. Tags are replaced wholesale:
-// disconnect all, then connect-or-create by unique name. Collection
-// memberships are replaced wholesale too: ItemCollection is an explicit join
-// model, so that's a deleteMany + create on the join rows rather than
-// set/connectOrCreate.
+// without a second fetch), or null when the item isn't found under the given
+// user. Tags are replaced wholesale: disconnect all, then connect-or-create by
+// unique name. Collection memberships are replaced wholesale too:
+// ItemCollection is an explicit join model, so that's a deleteMany + create on
+// the join rows rather than set/connectOrCreate.
 export async function updateItem(
   id: string,
   data: UpdateItemData,
+  userId: string,
 ): Promise<ItemDetail | null> {
   const existing = await prisma.item.findFirst({
-    where: { id, user: { email: DEMO_USER_EMAIL } },
+    where: { id, userId },
     select: { id: true },
   });
   if (!existing) return null;
 
-  const collectionIds = await resolveCollectionIds(data.collectionIds);
+  const collectionIds = await resolveCollectionIds(data.collectionIds, userId);
 
   const item = await prisma.item.update({
     where: { id },
@@ -382,15 +385,16 @@ export interface DeleteItemResult {
   fileKey: string | null;
 }
 
-// Delete an item, demo-user-scoped (matching getItemDetail/updateItem — the
-// calling action still requires an authenticated session). Returns
-// deleted: false when the item isn't found under the demo user so the action
-// can report not-found. ItemCollection join rows drop via onDelete: Cascade and
-// the implicit ItemTags join rows are removed by Prisma; shared Tag rows are
-// left intact.
-export async function deleteItem(id: string): Promise<DeleteItemResult> {
+// Delete an item, scoped to the given user. Returns deleted: false when the
+// item isn't found under that user so the action can report not-found.
+// ItemCollection join rows drop via onDelete: Cascade and the implicit
+// ItemTags join rows are removed by Prisma; shared Tag rows are left intact.
+export async function deleteItem(
+  id: string,
+  userId: string,
+): Promise<DeleteItemResult> {
   const existing = await prisma.item.findFirst({
-    where: { id, user: { email: DEMO_USER_EMAIL } },
+    where: { id, userId },
     select: { id: true, contentType: true, fileUrl: true },
   });
   if (!existing) return { deleted: false, fileKey: null };
@@ -416,13 +420,13 @@ export interface CreateItemData {
   collectionIds: string[];
 }
 
-// Create an item under the demo user and return its ItemDetail, or null when
-// `type` isn't a system type. Demo-user-scoped to match the rest of the layer —
-// the calling action still requires an authenticated session. Tags are
-// connect-or-created by unique name; collectionIds are validated against the
-// demo user's own collections and linked via the ItemCollection join rows.
+// Create an item under the given user and return its ItemDetail, or null when
+// `type` isn't a system type. Tags are connect-or-created by unique name;
+// collectionIds are validated against the user's own collections and linked
+// via the ItemCollection join rows.
 export async function createItem(
   data: CreateItemData,
+  userId: string,
 ): Promise<ItemDetail | null> {
   const itemType = await prisma.itemType.findFirst({
     where: { name: data.type, isSystem: true, userId: null },
@@ -430,13 +434,7 @@ export async function createItem(
   });
   if (!itemType) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { email: DEMO_USER_EMAIL },
-    select: { id: true },
-  });
-  if (!user) return null;
-
-  const collectionIds = await resolveCollectionIds(data.collectionIds);
+  const collectionIds = await resolveCollectionIds(data.collectionIds, userId);
 
   const item = await prisma.item.create({
     data: {
@@ -446,7 +444,7 @@ export async function createItem(
       url: data.url,
       language: data.language,
       contentType: "TEXT",
-      userId: user.id,
+      userId,
       itemTypeId: itemType.id,
       tags: {
         connectOrCreate: data.tags.map((name) => ({
@@ -477,11 +475,11 @@ export interface CreateFileItemData {
   collectionIds: string[];
 }
 
-// Create a FILE-kind item under the demo user and return its ItemDetail, or
-// null when `type` isn't a system type. Demo-user-scoped to match the rest of
-// the layer — the calling route still requires an authenticated session.
+// Create a FILE-kind item under the given user and return its ItemDetail, or
+// null when `type` isn't a system type.
 export async function createFileItem(
   data: CreateFileItemData,
+  userId: string,
 ): Promise<ItemDetail | null> {
   const itemType = await prisma.itemType.findFirst({
     where: { name: data.type, isSystem: true, userId: null },
@@ -489,13 +487,7 @@ export async function createFileItem(
   });
   if (!itemType) return null;
 
-  const user = await prisma.user.findUnique({
-    where: { email: DEMO_USER_EMAIL },
-    select: { id: true },
-  });
-  if (!user) return null;
-
-  const collectionIds = await resolveCollectionIds(data.collectionIds);
+  const collectionIds = await resolveCollectionIds(data.collectionIds, userId);
 
   const item = await prisma.item.create({
     data: {
@@ -505,7 +497,7 @@ export async function createFileItem(
       fileUrl: data.fileUrl,
       fileName: data.fileName,
       fileSize: data.fileSize,
-      userId: user.id,
+      userId,
       itemTypeId: itemType.id,
       tags: {
         connectOrCreate: data.tags.map((name) => ({
@@ -527,12 +519,15 @@ export interface ItemFile {
   fileName: string;
 }
 
-// The stored file reference for a FILE item, for the download proxy.
-// Demo-user-scoped to match getItemDetail; null when the item doesn't exist,
-// isn't a FILE item, or has no stored key.
-export async function getItemFile(id: string): Promise<ItemFile | null> {
+// The stored file reference for a FILE item, for the download proxy. Scoped to
+// the given user; null when the item doesn't exist, isn't a FILE item, or has
+// no stored key.
+export async function getItemFile(
+  id: string,
+  userId: string,
+): Promise<ItemFile | null> {
   const item = await prisma.item.findFirst({
-    where: { id, user: { email: DEMO_USER_EMAIL }, contentType: "FILE" },
+    where: { id, userId, contentType: "FILE" },
     select: { fileUrl: true, fileName: true },
   });
   if (!item?.fileUrl) return null;
@@ -545,11 +540,11 @@ export interface DashboardItemStats {
 }
 
 // Item totals for the dashboard stats cards.
-export async function getItemStats(): Promise<DashboardItemStats> {
+export async function getItemStats(userId: string): Promise<DashboardItemStats> {
   const [items, favoriteItems] = await Promise.all([
-    prisma.item.count({ where: { user: { email: DEMO_USER_EMAIL } } }),
+    prisma.item.count({ where: { userId } }),
     prisma.item.count({
-      where: { user: { email: DEMO_USER_EMAIL }, isFavorite: true },
+      where: { userId, isFavorite: true },
     }),
   ]);
   return { items, favoriteItems };

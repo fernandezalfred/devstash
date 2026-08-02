@@ -8,8 +8,7 @@ import { contentTypeForFileName } from "@/lib/uploads";
 // Stream a FILE item's stored object from R2 through the app, so the browser
 // never talks to the bucket (no CORS, bucket stays private). Serves inline by
 // default (image previews); `?download=1` forces a save-as attachment.
-// Requires an authenticated session; the item lookup is demo-user-scoped
-// (matching the rest of the data layer).
+// Requires an authenticated session; the item lookup is scoped to that user.
 
 // RFC 5987 filename* fallback for non-ASCII names; the plain filename= keeps a
 // sanitized ASCII version for older clients.
@@ -31,7 +30,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const file = await getItemFile(id);
+  const file = await getItemFile(id, session.user.id);
   if (!file) {
     return NextResponse.json(
       { success: false, error: "File not found" },

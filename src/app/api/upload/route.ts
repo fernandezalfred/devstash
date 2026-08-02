@@ -103,16 +103,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const item = await createFileItem({
-      type,
-      title,
-      description,
-      fileUrl: key,
-      fileName: file.name,
-      fileSize: file.size,
-      tags,
-      collectionIds,
-    });
+    const item = await createFileItem(
+      {
+        type,
+        title,
+        description,
+        fileUrl: key,
+        fileName: file.name,
+        fileSize: file.size,
+        tags,
+        collectionIds,
+      },
+      session.user.id,
+    );
     if (!item) {
       // Unknown type shouldn't happen past Zod, but never strand the object.
       await deleteFromR2(key).catch(() => {});

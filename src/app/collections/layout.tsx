@@ -25,9 +25,9 @@ export default async function CollectionsLayout({
   if (!user) redirect("/sign-in");
 
   const [itemTypes, collections, collectionOptions] = await Promise.all([
-    getSidebarItemTypes(),
+    getSidebarItemTypes(user.id),
     getDashboardCollections(user.id),
-    getCollectionsForPicker(),
+    getCollectionsForPicker(user.id),
   ]);
 
   return (
