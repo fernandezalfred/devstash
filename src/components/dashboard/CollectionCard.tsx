@@ -1,6 +1,17 @@
-import Link from "next/link";
-import { Star } from "lucide-react";
+"use client";
 
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { MoreVertical, Pencil, Star, Trash2 } from "lucide-react";
+
+import { DeleteCollectionDialog } from "@/components/dashboard/DeleteCollectionDialog";
+import { EditCollectionDialog } from "@/components/dashboard/EditCollectionDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { type DashboardCollection } from "@/lib/db/collections";
 import { itemTypeIcons } from "@/lib/item-icons";
 
@@ -11,12 +22,25 @@ export function CollectionCard({
 }: {
   collection: DashboardCollection;
 }) {
+  const router = useRouter();
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const { accentColor, types } = collection;
 
   return (
-    <Link
-      href={`/collections/${collection.id}`}
-      className="group flex flex-col rounded-xl border border-l-4 border-border bg-card p-4 transition-colors hover:border-foreground/20"
+    // A div instead of a <Link> so the menu trigger button isn't nested inside
+    // an anchor (invalid HTML); keyboard access mirrors a link/button.
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => router.push(`/collections/${collection.id}`)}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          router.push(`/collections/${collection.id}`);
+        }
+      }}
+      className="group relative flex cursor-pointer flex-col rounded-xl border border-l-4 border-border bg-card p-4 text-left transition-colors hover:border-foreground/20 focus-visible:border-foreground/20 focus-visible:outline-none"
       style={
         accentColor
           ? {
@@ -26,7 +50,7 @@ export function CollectionCard({
           : undefined
       }
     >
-      <h3 className="flex items-center gap-1.5 font-medium">
+      <h3 className="flex items-center gap-1.5 pr-6 font-medium">
         <span className="truncate">{collection.name}</span>
         {collection.isFavorite && (
           <Star className="size-3.5 shrink-0 fill-yellow-400 text-yellow-400" />
@@ -54,6 +78,52 @@ export function CollectionCard({
           })}
         </div>
       )}
-    </Link>
+
+      {/* Wrapping this whole cluster in a click-stopper keeps the menu (and
+          the modals it opens, which portal to <body> but stay in this React
+          subtree) from bubbling clicks up to the card's own navigation. */}
+      <div
+        className="absolute top-3 right-3"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="Collection actions"
+              className="flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:bg-muted data-[state=open]:opacity-100"
+            >
+              <MoreVertical className="size-4" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onSelect={() => setEditOpen(true)}>
+              <Pencil /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => setDeleteOpen(true)}
+              className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+            >
+              <Trash2 /> Delete
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Star /> Favorite
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <EditCollectionDialog
+          collection={collection}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+        />
+        <DeleteCollectionDialog
+          collectionId={collection.id}
+          collectionName={collection.name}
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+        />
+      </div>
+    </div>
   );
 }

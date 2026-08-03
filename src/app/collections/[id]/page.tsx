@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 
 import { auth } from "@/auth";
+import { CollectionHeaderActions } from "@/components/dashboard/CollectionHeaderActions";
 import { FileRow } from "@/components/items/FileRow";
 import { ImageCard } from "@/components/items/ImageCard";
 import { ItemCard } from "@/components/items/ItemCard";
@@ -62,16 +63,19 @@ export default async function CollectionDetailPage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{collection.name}</h1>
-        <p className="text-sm text-muted-foreground">
-          {items.length} {items.length === 1 ? "item" : "items"}
-        </p>
-        {collection.description && (
-          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-            {collection.description}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold">{collection.name}</h1>
+          <p className="text-sm text-muted-foreground">
+            {items.length} {items.length === 1 ? "item" : "items"}
           </p>
-        )}
+          {collection.description && (
+            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+              {collection.description}
+            </p>
+          )}
+        </div>
+        <CollectionHeaderActions collection={collection} />
       </div>
 
       {items.length === 0 ? (

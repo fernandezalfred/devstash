@@ -1,16 +1,28 @@
-# Current Feature
+# Current Feature: Collection Actions (Edit / Delete / Favorite icon)
 
 ## status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- What success looks like -->
+- On `/collections/[id]`: add Edit, Delete, and Favorite buttons/icons near the collection header.
+  - Favorite: icon/button only for now — **not wired up**, no toggle logic.
+  - Edit: opens a modal to edit the collection's metadata (name, description).
+  - Delete: requires a confirmation dialog before deleting. Deleting a collection must **not** delete its items — items only stop belonging to that collection (their `ItemCollection` link is removed); the items themselves, and their membership in any other collections, are untouched.
+- On `CollectionCard` (the card used on both `/collections` and the dashboard grid): add a 3-dot ("more") icon that opens a dropdown menu with Edit, Delete, Favorite entries.
+  - Clicking anywhere else on the card still navigates to `/collections/[id]` (existing behavior).
+  - Opening/using the dropdown must not trigger that navigation.
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Favorite is explicitly out of scope for functionality this round — just the icon/button in both places, no `isFavorite` mutation wired.
+- `CollectionCard` (`src/components/dashboard/CollectionCard.tsx`) is currently a `<Link>` wrapping the whole card — adding an interactive dropdown trigger inside it needs the same nested-interactive-element fix used elsewhere (e.g. `ItemCard`/`FileRow`: convert the root to `div[role="button"]` + click handler + keyboard support, or otherwise avoid an `<a>`/`<button>` containing another button). `CollectionCard` is shared by `CollectionsGrid`, used on both `/collections` and the dashboard, so one fix covers both.
+- Delete needs a confirmation `AlertDialog`, matching the existing pattern (`DeleteAccountDialog`, `DeleteItemDialog`).
+- Edit needs a `Dialog` modal, matching the existing pattern (`CreateItemDialog`, the collection-create modal) — likely name + description fields only, matching the `Collection` model's editable metadata.
+- Need new data-layer support for updating and deleting a collection (currently `src/lib/db/collections.ts` only has create/read). Deleting a collection should rely on the existing `ItemCollection` cascade (`onDelete: Cascade` on the join, not on `Item`) so items are preserved — confirm this against the schema during implementation rather than assuming.
+- Mutation pattern is inconsistent in this codebase so far: item mutations (`createItem`/`updateItem`/`deleteItem`) are Server Actions in `src/actions/items.ts`; collection *create* deliberately used an API route (`POST /api/collections`) instead, per an explicit user request at the time. Decide during `start` which pattern to follow for collection edit/delete (recommend matching the existing collection-create route for consistency within `collections`, but flag it for confirmation rather than assuming).
+- Scope is limited to `/collections/[id]` (header actions) and `CollectionCard` (dropdown) — no changes to the `/collections` list page layout itself beyond what `CollectionCard` needs.
 
 <!-- Keep this updated. Earliest to latest -->
 

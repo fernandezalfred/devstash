@@ -138,3 +138,33 @@ export async function createCollection(
   });
   return collection;
 }
+
+// Update a collection's metadata (name/description), scoped to the given
+// (authenticated) owner. updateMany + a count check (rather than update, which
+// throws on no match) so an unknown id or another user's collection cleanly
+// returns null instead of a 500.
+export async function updateCollection(
+  id: string,
+  userId: string,
+  input: { name: string; description: string | null },
+): Promise<{ id: string; name: string; description: string | null } | null> {
+  const result = await prisma.collection.updateMany({
+    where: { id, userId },
+    data: { name: input.name, description: input.description },
+  });
+  if (result.count === 0) return null;
+  return { id, name: input.name, description: input.description };
+}
+
+// Delete a collection, scoped to the given (authenticated) owner. Only the
+// collection and its ItemCollection join rows are removed (the join's
+// `collection` relation cascades — see schema.prisma); the items themselves,
+// and their membership in any other collections, are left untouched. Returns
+// false if the collection doesn't exist or isn't owned by that user.
+export async function deleteCollection(
+  id: string,
+  userId: string,
+): Promise<boolean> {
+  const result = await prisma.collection.deleteMany({ where: { id, userId } });
+  return result.count > 0;
+}
