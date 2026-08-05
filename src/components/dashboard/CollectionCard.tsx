@@ -35,6 +35,11 @@ export function CollectionCard({
       tabIndex={0}
       onClick={() => router.push(`/collections/${collection.id}`)}
       onKeyDown={(event) => {
+        // Guard against events from nested focusable elements (e.g. the
+        // Edit dialog's inputs, which portal to <body> but stay in this
+        // React subtree, so a Space keystroke while typing there still
+        // bubbles here) — only react when the card itself is the target.
+        if (event.target !== event.currentTarget) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           router.push(`/collections/${collection.id}`);
