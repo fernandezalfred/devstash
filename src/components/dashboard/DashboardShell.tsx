@@ -5,12 +5,13 @@ import { useState } from "react";
 import { Sidebar } from "@/components/dashboard/Sidebar";
 import { TopBar } from "@/components/dashboard/TopBar";
 import { ItemDrawerProvider } from "@/components/items/ItemDrawer";
+import { CommandPaletteProvider } from "@/components/search/CommandPalette";
 import { useIsMobile } from "@/hooks/use-mobile";
 import {
   type CollectionOption,
   type DashboardCollection,
 } from "@/lib/db/collections";
-import { type SidebarItemType } from "@/lib/db/items";
+import { type SearchItem, type SidebarItemType } from "@/lib/db/items";
 import { type CurrentUser } from "@/lib/db/users";
 import { cn } from "@/lib/utils";
 
@@ -23,12 +24,14 @@ export function DashboardShell({
   itemTypes,
   collections,
   collectionOptions,
+  searchItems,
   user,
 }: {
   children: React.ReactNode;
   itemTypes: SidebarItemType[];
   collections: DashboardCollection[];
   collectionOptions: CollectionOption[];
+  searchItems: SearchItem[];
   user: CurrentUser;
 }) {
   const isMobile = useIsMobile();
@@ -39,48 +42,59 @@ export function DashboardShell({
     isMobile ? setMobileOpen((o) => !o) : setDesktopOpen((o) => !o);
 
   return (
-    <div className="flex h-screen flex-col">
-      <TopBar
-        onToggleSidebar={toggle}
-        itemTypes={itemTypes}
-        collectionOptions={collectionOptions}
-      />
+    // ItemDrawerProvider now wraps the whole shell (not just <main>) so the
+    // command palette below — which lives alongside TopBar — can also open
+    // items in the drawer via useItemDrawer().
+    <ItemDrawerProvider collectionOptions={collectionOptions}>
+      <CommandPaletteProvider items={searchItems} collections={collections}>
+        <div className="flex h-screen flex-col">
+          <TopBar
+            onToggleSidebar={toggle}
+            itemTypes={itemTypes}
+            collectionOptions={collectionOptions}
+          />
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Desktop: inline collapsible sidebar */}
-        <div
-          className={cn(
-            "hidden shrink-0 overflow-hidden transition-[width] duration-200 md:block",
-            desktopOpen ? "w-60" : "w-0",
-          )}
-        >
-          <Sidebar itemTypes={itemTypes} collections={collections} user={user} />
+          <div className="flex flex-1 overflow-hidden">
+            {/* Desktop: inline collapsible sidebar */}
+            <div
+              className={cn(
+                "hidden shrink-0 overflow-hidden transition-[width] duration-200 md:block",
+                desktopOpen ? "w-60" : "w-0",
+              )}
+            >
+              <Sidebar
+                itemTypes={itemTypes}
+                collections={collections}
+                user={user}
+              />
+            </div>
+
+            {/* Mobile: overlay drawer */}
+            <div
+              className={cn(
+                "fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden",
+                mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
+              )}
+              onClick={() => setMobileOpen(false)}
+              aria-hidden
+            />
+            <div
+              className={cn(
+                "fixed inset-y-0 left-0 z-50 transition-transform duration-200 md:hidden",
+                mobileOpen ? "translate-x-0" : "-translate-x-full",
+              )}
+            >
+              <Sidebar
+                itemTypes={itemTypes}
+                collections={collections}
+                user={user}
+              />
+            </div>
+
+            <main className="flex-1 overflow-y-auto p-6">{children}</main>
+          </div>
         </div>
-
-        {/* Mobile: overlay drawer */}
-        <div
-          className={cn(
-            "fixed inset-0 z-40 bg-black/50 transition-opacity md:hidden",
-            mobileOpen ? "opacity-100" : "pointer-events-none opacity-0",
-          )}
-          onClick={() => setMobileOpen(false)}
-          aria-hidden
-        />
-        <div
-          className={cn(
-            "fixed inset-y-0 left-0 z-50 transition-transform duration-200 md:hidden",
-            mobileOpen ? "translate-x-0" : "-translate-x-full",
-          )}
-        >
-          <Sidebar itemTypes={itemTypes} collections={collections} user={user} />
-        </div>
-
-        <main className="flex-1 overflow-y-auto p-6">
-          <ItemDrawerProvider collectionOptions={collectionOptions}>
-            {children}
-          </ItemDrawerProvider>
-        </main>
-      </div>
-    </div>
+      </CommandPaletteProvider>
+    </ItemDrawerProvider>
   );
 }

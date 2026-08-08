@@ -5,14 +5,18 @@ import { PanelLeft, Search, Sparkles } from "lucide-react";
 
 import { CreateCollectionDialog } from "@/components/dashboard/CreateCollectionDialog";
 import { CreateItemDialog } from "@/components/items/CreateItemDialog";
+import { useCommandPalette } from "@/components/search/CommandPalette";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { type CollectionOption } from "@/lib/db/collections";
 import { type SidebarItemType } from "@/lib/db/items";
 
-// Top bar: brand, sidebar toggle, search field, and action buttons. Search
-// stays display-only until a later phase; the sidebar toggle is wired to the
-// dashboard shell, and New Collection / New Item open their create modals.
+// Top bar: brand, sidebar toggle, search field, and action buttons. The
+// search field opens the global command palette (Cmd+K/Ctrl+K) rather than
+// filtering inline — it's `readOnly` so a click/focus opens the palette
+// instead of allowing typing directly into the field. The sidebar toggle is
+// wired to the dashboard shell, and New Collection / New Item open their
+// create modals.
 export function TopBar({
   onToggleSidebar,
   itemTypes = [],
@@ -22,6 +26,8 @@ export function TopBar({
   itemTypes?: SidebarItemType[];
   collectionOptions?: CollectionOption[];
 }) {
+  const { open: openPalette } = useCommandPalette();
+
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
       <div className="flex items-center gap-1.5 font-semibold">
@@ -45,11 +51,13 @@ export function TopBar({
       <div className="relative mx-auto w-full max-w-xl">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
-          type="search"
-          placeholder="Search items..."
-          aria-label="Search items"
-          className="h-9 pl-8 pr-12"
-          disabled
+          type="text"
+          placeholder="Search items and collections..."
+          aria-label="Search items and collections"
+          className="h-9 cursor-pointer pl-8 pr-12"
+          readOnly
+          onClick={openPalette}
+          onFocus={openPalette}
         />
         <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded border border-border bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
           ⌘K

@@ -5,7 +5,7 @@ import {
   getCollectionsForPicker,
   getDashboardCollections,
 } from "@/lib/db/collections";
-import { getSidebarItemTypes } from "@/lib/db/items";
+import { getSearchableItems, getSidebarItemTypes } from "@/lib/db/items";
 import { getCurrentUser } from "@/lib/db/users";
 
 // Wrap the collections pages in the same shell as the dashboard/items pages
@@ -24,17 +24,20 @@ export default async function CollectionsLayout({
   // never null below (and to cover any session/DB drift).
   if (!user) redirect("/sign-in");
 
-  const [itemTypes, collections, collectionOptions] = await Promise.all([
-    getSidebarItemTypes(user.id),
-    getDashboardCollections(user.id),
-    getCollectionsForPicker(user.id),
-  ]);
+  const [itemTypes, collections, collectionOptions, searchItems] =
+    await Promise.all([
+      getSidebarItemTypes(user.id),
+      getDashboardCollections(user.id),
+      getCollectionsForPicker(user.id),
+      getSearchableItems(user.id),
+    ]);
 
   return (
     <DashboardShell
       itemTypes={itemTypes}
       collections={collections}
       collectionOptions={collectionOptions}
+      searchItems={searchItems}
       user={user}
     >
       {children}

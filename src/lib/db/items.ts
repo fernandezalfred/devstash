@@ -91,6 +91,54 @@ export async function getRecentItems(
   return items.map(toDashboardItem);
 }
 
+// Lightweight item shape for the global command palette, scoped to the given
+// user. Uses a nested `select` (not `include: { itemType: true }`, matching
+// the 2026-06-19 audit fix elsewhere in this file) so it doesn't refetch
+// every column of the constant 7 system types per item.
+export interface SearchItem {
+  id: string;
+  title: string;
+  typeName: string; // display singular, e.g. "Snippet"
+  typeIcon: string; // lucide icon name
+  typeColor: string; // hex
+  preview: string | null; // content preview: description, else content/url
+}
+
+const SEARCH_PREVIEW_LENGTH = 140;
+
+// All items for the given user (no pagination) — the palette pre-fetches this
+// once and filters client-side, per the feature spec.
+export async function getSearchableItems(
+  userId: string,
+): Promise<SearchItem[]> {
+  const items = await prisma.item.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      content: true,
+      url: true,
+      itemType: { select: { name: true, icon: true, color: true } },
+    },
+  });
+
+  return items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    typeName:
+      item.itemType.name.charAt(0).toUpperCase() + item.itemType.name.slice(1),
+    typeIcon: item.itemType.icon,
+    typeColor: item.itemType.color,
+    preview:
+      item.description ??
+      item.content?.slice(0, SEARCH_PREVIEW_LENGTH) ??
+      item.url ??
+      null,
+  }));
+}
+
 // A system item type for the sidebar Types list, with the demo user's count.
 export interface SidebarItemType {
   id: string;
