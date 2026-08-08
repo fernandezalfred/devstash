@@ -5,7 +5,7 @@ import {
   getCollectionsForPicker,
   getDashboardCollections,
 } from "@/lib/db/collections";
-import { getSidebarItemTypes } from "@/lib/db/items";
+import { getSearchableItems, getSidebarItemTypes } from "@/lib/db/items";
 import { getCurrentUser } from "@/lib/db/users";
 
 // Fetch the sidebar's types and collections per-request so it reflects the
@@ -23,17 +23,20 @@ export default async function DashboardLayout({
   // null below (and to cover any session/DB drift).
   if (!user) redirect("/sign-in");
 
-  const [itemTypes, collections, collectionOptions] = await Promise.all([
-    getSidebarItemTypes(user.id),
-    getDashboardCollections(user.id),
-    getCollectionsForPicker(user.id),
-  ]);
+  const [itemTypes, collections, collectionOptions, searchItems] =
+    await Promise.all([
+      getSidebarItemTypes(user.id),
+      getDashboardCollections(user.id),
+      getCollectionsForPicker(user.id),
+      getSearchableItems(user.id),
+    ]);
 
   return (
     <DashboardShell
       itemTypes={itemTypes}
       collections={collections}
       collectionOptions={collectionOptions}
+      searchItems={searchItems}
       user={user}
     >
       {children}
