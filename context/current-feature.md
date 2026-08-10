@@ -1,16 +1,27 @@
-# Current Feature
+# Current Feature: Pagination
 
 ## status
 
-Not Started
+In Progress
 
 ## Goals
 
-<!-- What success looks like -->
+- `/items/[type]` is paginated: 21 items per page (`ITEMS_PER_PAGE`)
+- `/collections/[id]` is paginated: 21 items per page (`COLLECTIONS_PER_PAGE`)
+- Pagination controls render at the bottom of each list: numbered page links plus prev/next
+- Prev/next controls are disabled (greyed out) when there's no previous/next page
+- Dashboard's collections grid is capped at 6 (`DASHBOARD_COLLECTIONS_LIMIT`)
+- Dashboard's recent items list is capped at 10 (`DASHBOARD_RECENT_ITEMS_LIMIT`)
+- Each page fetch only pulls the records that page needs (no fetch-all-then-slice)
 
 ## Notes
 
-<!-- Additional context, constraints, or details from spec -->
+- Spec: `context/features/pagination-spec.md`
+- Constants: `ITEMS_PER_PAGE = 21`, `COLLECTIONS_PER_PAGE = 21`, `DASHBOARD_COLLECTIONS_LIMIT = 6`, `DASHBOARD_RECENT_ITEMS_LIMIT = 10`
+- Existing DB-layer reads that currently fetch unbounded lists and will need paging params (skip/take + a total count for page-number math): `getItemsByType`, `getItemsByCollection` (both in `src/lib/db/items.ts`), and `getDashboardCollections` (`src/lib/db/collections.ts`, already capped conceptually but not via a named constant)
+- `getRecentItems` already limits to 10 (`src/lib/db/items.ts`) — confirm it matches `DASHBOARD_RECENT_ITEMS_LIMIT` or switch it to reference the constant
+- Resolved at start (user confirmed): `/collections` (the all-collections list page) is in scope too — `ITEMS_PER_PAGE` paginates `/items/[type]` and `/collections/[id]`, `COLLECTIONS_PER_PAGE` paginates `/collections`.
+- Resolved at start (user confirmed): on `/collections/[id]`, the 21-per-page limit applies to the collection's combined item list (ordered by `updatedAt`, one page cursor), with each page's items still split into their existing type sections (snippets grid, images gallery, files list, etc.) for rendering — not an independent per-type-section cursor.
 
 <!-- Keep this updated. Earliest to latest -->
 

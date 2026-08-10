@@ -3,6 +3,7 @@
 
 import { cache } from "react";
 
+import { COLLECTIONS_PER_PAGE, resolvePage } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 
 // A distinct item type present in a collection, with the bits the card needs.
@@ -23,64 +24,134 @@ export interface DashboardCollection {
   accentColor: string | null; // dominant (most-used) type's color
 }
 
-// Recent collections for the dashboard, most recently updated first, scoped
-// to the given (authenticated) user — see createCollection below for the
-// matching scoping. Wrapped in React's cache() so the layout (sidebar) and
-// page (main grid) share one query per request instead of issuing it twice
-// (cache() keys on arguments, so this still dedupes correctly per userId).
-export const getDashboardCollections = cache(
-  async (userId: string): Promise<DashboardCollection[]> => {
-    const collections = await prisma.collection.findMany({
-      where: { userId },
-      orderBy: { updatedAt: "desc" },
-      include: {
-        items: {
-          // The 7 system types are constant, so only pull the fields the card
-          // needs instead of every column of itemType for every item.
-          select: {
-            item: {
-              select: {
-                itemType: {
-                  select: { id: true, name: true, icon: true, color: true },
-                },
-              },
-            },
+// What the collection-tallying queries below need from the database. The 7
+// system types are constant, so only pull the fields the card needs instead
+// of every column of itemType for every item.
+const collectionWithItemTypesInclude = {
+  items: {
+    select: {
+      item: {
+        select: {
+          itemType: {
+            select: { id: true, name: true, icon: true, color: true },
           },
         },
       },
+    },
+  },
+} as const;
+
+type CollectionWithItemTypes = {
+  id: string;
+  name: string;
+  description: string | null;
+  isFavorite: boolean;
+  items: { item: { itemType: CollectionTypeSummary } }[];
+};
+
+// Tallies a collection's items per type to find the distinct types present
+// and the dominant one (drives the card's accent color).
+function toDashboardCollection(
+  collection: CollectionWithItemTypes,
+): DashboardCollection {
+  const counts = new Map<string, { type: CollectionTypeSummary; count: number }>();
+  for (const { item } of collection.items) {
+    const { id, name, icon, color } = item.itemType;
+    const existing = counts.get(id);
+    if (existing) {
+      existing.count += 1;
+    } else {
+      counts.set(id, { type: { id, name, icon, color }, count: 1 });
+    }
+  }
+
+  const ranked = [...counts.values()].sort((a, b) => b.count - a.count);
+
+  return {
+    id: collection.id,
+    name: collection.name,
+    description: collection.description,
+    isFavorite: collection.isFavorite,
+    itemCount: collection.items.length,
+    types: ranked.map((entry) => entry.type),
+    accentColor: ranked[0]?.type.color ?? null,
+  };
+}
+
+// Collections for the given (authenticated) user, most recently updated
+// first — see createCollection below for the matching scoping. With no
+// `limit`, returns every collection (the sidebar's Favorites/Recents lists
+// need the full set to split client-side). With a `limit`, only that many
+// are fetched via a DB-level `take` (the dashboard's capped grid). Wrapped in
+// React's cache() so callers within one request that pass the same args
+// (e.g. the layout's sidebar fetch) share one query instead of issuing it
+// twice — a distinct `limit` is a distinct cache key, so the dashboard's
+// capped call is a separate query from the sidebar's unbounded one.
+export const getDashboardCollections = cache(
+  async (userId: string, limit?: number): Promise<DashboardCollection[]> => {
+    const collections = await prisma.collection.findMany({
+      where: { userId },
+      orderBy: { updatedAt: "desc" },
+      ...(limit ? { take: limit } : {}),
+      include: collectionWithItemTypesInclude,
     });
 
-    return collections.map((collection) => {
-      // Tally items per type to find the distinct types present and the
-      // dominant one (drives the card's accent color).
-      const counts = new Map<
-        string,
-        { type: CollectionTypeSummary; count: number }
-      >();
-      for (const { item } of collection.items) {
-        const { id, name, icon, color } = item.itemType;
-        const existing = counts.get(id);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          counts.set(id, { type: { id, name, icon, color }, count: 1 });
-        }
-      }
-
-      const ranked = [...counts.values()].sort((a, b) => b.count - a.count);
-
-      return {
-        id: collection.id,
-        name: collection.name,
-        description: collection.description,
-        isFavorite: collection.isFavorite,
-        itemCount: collection.items.length,
-        types: ranked.map((entry) => entry.type),
-        accentColor: ranked[0]?.type.color ?? null,
-      };
-    });
+    return collections.map(toDashboardCollection);
   },
 );
+
+export interface DashboardCollectionStats {
+  total: number;
+  favorites: number;
+}
+
+// Total/favorite collection counts for the dashboard stats cards — count
+// queries, decoupled from getDashboardCollections' (possibly capped) grid
+// fetch so the stats stay accurate regardless of the grid's `limit`.
+export async function getCollectionStats(
+  userId: string,
+): Promise<DashboardCollectionStats> {
+  const [total, favorites] = await Promise.all([
+    prisma.collection.count({ where: { userId } }),
+    prisma.collection.count({ where: { userId, isFavorite: true } }),
+  ]);
+  return { total, favorites };
+}
+
+export interface CollectionsPage {
+  collections: DashboardCollection[];
+  currentPage: number;
+  totalPages: number;
+}
+
+// A single page of the given user's collections for the /collections list
+// page, most recently updated first. `page` is 1-indexed and clamped to the
+// valid range. Only fetches the requested page, never the full list.
+export async function getCollectionsPage(
+  userId: string,
+  page = 1,
+): Promise<CollectionsPage> {
+  const totalCount = await prisma.collection.count({ where: { userId } });
+  const { currentPage, totalPages } = resolvePage(
+    totalCount,
+    page,
+    COLLECTIONS_PER_PAGE,
+  );
+
+  const collections = await prisma.collection.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    skip: (currentPage - 1) * COLLECTIONS_PER_PAGE,
+    take: COLLECTIONS_PER_PAGE,
+    include: collectionWithItemTypesInclude,
+  });
+
+  return {
+    collections: collections.map(toDashboardCollection),
+    currentPage,
+    totalPages,
+  };
+}
 
 export interface CollectionDetail {
   id: string;

@@ -3,6 +3,11 @@
 
 import { cache } from "react";
 
+import {
+  DASHBOARD_RECENT_ITEMS_LIMIT,
+  ITEMS_PER_PAGE,
+  resolvePage,
+} from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 
 export interface DashboardItem {
@@ -80,7 +85,7 @@ export async function getPinnedItems(userId: string): Promise<DashboardItem[]> {
 // The most recently updated items for the given user.
 export async function getRecentItems(
   userId: string,
-  limit = 10,
+  limit = DASHBOARD_RECENT_ITEMS_LIMIT,
 ): Promise<DashboardItem[]> {
   const items = await prisma.item.findMany({
     where: { userId },
@@ -199,17 +204,23 @@ export const getSidebarItemTypes = cache(
 
 export interface ItemsByType {
   // The resolved system item type for the slug, or null when the slug doesn't
-  // map to a system type (the page renders a 404 in that case).
+  // map to a system type (the page renders a 404 in that case). itemCount is
+  // the type's total item count, not just this page's.
   type: SidebarItemType | null;
   items: DashboardItem[];
+  currentPage: number;
+  totalPages: number;
 }
 
-// Items of a single system type for the given user, most recently updated
-// first, plus the resolved type metadata. `slug` is the plural route slug
-// ("snippets").
+// A single page of items of one system type for the given user, most
+// recently updated first, plus the resolved type metadata. `slug` is the
+// plural route slug ("snippets"); `page` is 1-indexed and clamped to the
+// valid range. Only fetches the requested page (count + a `skip`/`take`
+// findMany), never the full list.
 export async function getItemsByType(
   slug: string,
   userId: string,
+  page = 1,
 ): Promise<ItemsByType> {
   // Route slugs are the pluralized type name; system type names are lowercase
   // singular ("snippet"). Strip the trailing "s" to recover the type name.
@@ -218,11 +229,17 @@ export async function getItemsByType(
   const itemType = await prisma.itemType.findFirst({
     where: { name, isSystem: true, userId: null },
   });
-  if (!itemType) return { type: null, items: [] };
+  if (!itemType) return { type: null, items: [], currentPage: 1, totalPages: 1 };
+
+  const where = { userId, itemTypeId: itemType.id };
+  const totalCount = await prisma.item.count({ where });
+  const { currentPage, totalPages } = resolvePage(totalCount, page, ITEMS_PER_PAGE);
 
   const items = await prisma.item.findMany({
-    where: { userId, itemTypeId: itemType.id },
+    where,
     orderBy: { updatedAt: "desc" },
+    skip: (currentPage - 1) * ITEMS_PER_PAGE,
+    take: ITEMS_PER_PAGE,
     include: itemInclude,
   });
 
@@ -233,27 +250,45 @@ export async function getItemsByType(
       slug: `${itemType.name}s`,
       icon: itemType.icon,
       color: itemType.color,
-      itemCount: items.length,
+      itemCount: totalCount,
     },
     items: items.map(toDashboardItem),
+    currentPage,
+    totalPages,
   };
 }
 
-// Items linked to a collection (via the ItemCollection join), scoped to the
-// given user, most recently updated first.
+export interface ItemsByCollection {
+  items: DashboardItem[];
+  totalCount: number;
+  currentPage: number;
+  totalPages: number;
+}
+
+// A single page of a collection's items (via the ItemCollection join),
+// scoped to the given user, ordered as one combined list across types (most
+// recently updated first) — the page groups items by type for rendering, but
+// the 21-per-page window applies to the combined list, not per type. `page`
+// is 1-indexed and clamped to the valid range. Only fetches the requested
+// page, never the full list.
 export async function getItemsByCollection(
   collectionId: string,
   userId: string,
-): Promise<DashboardItem[]> {
+  page = 1,
+): Promise<ItemsByCollection> {
+  const where = { userId, collections: { some: { collectionId } } };
+  const totalCount = await prisma.item.count({ where });
+  const { currentPage, totalPages } = resolvePage(totalCount, page, ITEMS_PER_PAGE);
+
   const items = await prisma.item.findMany({
-    where: {
-      userId,
-      collections: { some: { collectionId } },
-    },
+    where,
     orderBy: { updatedAt: "desc" },
+    skip: (currentPage - 1) * ITEMS_PER_PAGE,
+    take: ITEMS_PER_PAGE,
     include: itemInclude,
   });
-  return items.map(toDashboardItem);
+
+  return { items: items.map(toDashboardItem), totalCount, currentPage, totalPages };
 }
 
 // Full detail for a single item, loaded on demand when the drawer opens.
