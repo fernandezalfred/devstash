@@ -5,8 +5,10 @@ import { CollectionHeaderActions } from "@/components/dashboard/CollectionHeader
 import { FileRow } from "@/components/items/FileRow";
 import { ImageCard } from "@/components/items/ImageCard";
 import { ItemCard } from "@/components/items/ItemCard";
+import { PaginationControls } from "@/components/pagination/PaginationControls";
 import { getCollectionDetail } from "@/lib/db/collections";
 import { getItemsByCollection, type DashboardItem } from "@/lib/db/items";
+import { parsePageParam } from "@/lib/pagination";
 
 // Render per-request so the collection reflects the current DB state instead
 // of baking data in at build time.
@@ -40,20 +42,24 @@ function groupByTypeSlug(items: DashboardItem[]): [string, DashboardItem[]][] {
 
 export default async function CollectionDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { id } = await params;
+  const page = parsePageParam((await searchParams).page);
 
   // The layout already redirects unauthenticated users, but guard here too so
   // getCollectionDetail always gets a real userId.
   const session = await auth();
   if (!session?.user?.id) redirect("/sign-in");
 
-  const [collection, items] = await Promise.all([
-    getCollectionDetail(id, session.user.id),
-    getItemsByCollection(id, session.user.id),
-  ]);
+  const [collection, { items, totalCount, currentPage, totalPages }] =
+    await Promise.all([
+      getCollectionDetail(id, session.user.id),
+      getItemsByCollection(id, session.user.id, page),
+    ]);
 
   // Unknown id, or a collection that isn't owned by the signed-in user → 404
   // rather than leaking another user's collection.
@@ -67,7 +73,7 @@ export default async function CollectionDetailPage({
         <div>
           <h1 className="text-2xl font-semibold">{collection.name}</h1>
           <p className="text-sm text-muted-foreground">
-            {items.length} {items.length === 1 ? "item" : "items"}
+            {totalCount} {totalCount === 1 ? "item" : "items"}
           </p>
           {collection.description && (
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
@@ -108,6 +114,12 @@ export default async function CollectionDetailPage({
           ))}
         </div>
       )}
+
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath={`/collections/${id}`}
+      />
     </div>
   );
 }

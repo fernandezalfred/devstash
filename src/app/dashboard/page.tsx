@@ -5,12 +5,16 @@ import { PinnedItems } from "@/components/dashboard/PinnedItems";
 import { RecentItems } from "@/components/dashboard/RecentItems";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { auth } from "@/auth";
-import { getDashboardCollections } from "@/lib/db/collections";
+import { getCollectionStats, getDashboardCollections } from "@/lib/db/collections";
 import {
   getItemStats,
   getPinnedItems,
   getRecentItems,
 } from "@/lib/db/items";
+import {
+  DASHBOARD_COLLECTIONS_LIMIT,
+  DASHBOARD_RECENT_ITEMS_LIMIT,
+} from "@/lib/pagination";
 
 // Render per-request so the dashboard reflects the current DB state instead of
 // baking data in at build time.
@@ -22,18 +26,20 @@ export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/sign-in");
 
-  const [collections, pinnedItems, recentItems, itemStats] = await Promise.all([
-    getDashboardCollections(session.user.id),
-    getPinnedItems(session.user.id),
-    getRecentItems(session.user.id),
-    getItemStats(session.user.id),
-  ]);
+  const [collections, collectionStats, pinnedItems, recentItems, itemStats] =
+    await Promise.all([
+      getDashboardCollections(session.user.id, DASHBOARD_COLLECTIONS_LIMIT),
+      getCollectionStats(session.user.id),
+      getPinnedItems(session.user.id),
+      getRecentItems(session.user.id, DASHBOARD_RECENT_ITEMS_LIMIT),
+      getItemStats(session.user.id),
+    ]);
 
   const stats = {
     items: itemStats.items,
-    collections: collections.length,
+    collections: collectionStats.total,
     favoriteItems: itemStats.favoriteItems,
-    favoriteCollections: collections.filter((c) => c.isFavorite).length,
+    favoriteCollections: collectionStats.favorites,
   };
 
   return (

@@ -5,9 +5,11 @@ import { CreateItemDialog } from "@/components/items/CreateItemDialog";
 import { FileRow } from "@/components/items/FileRow";
 import { ImageCard } from "@/components/items/ImageCard";
 import { ItemCard } from "@/components/items/ItemCard";
+import { PaginationControls } from "@/components/pagination/PaginationControls";
 import { getCollectionsForPicker } from "@/lib/db/collections";
 import { getItemsByType, getSidebarItemTypes } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
+import { parsePageParam } from "@/lib/pagination";
 
 // Render per-request so the list reflects the current DB state instead of baking
 // data in at build time.
@@ -15,10 +17,13 @@ export const dynamic = "force-dynamic";
 
 export default async function ItemsByTypePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ type: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { type: slug } = await params;
+  const page = parsePageParam((await searchParams).page);
 
   // The parent items/layout.tsx already redirects unauthenticated users, but
   // this page has no local session read otherwise — add one so the queries
@@ -26,11 +31,12 @@ export default async function ItemsByTypePage({
   const session = await auth();
   if (!session?.user?.id) redirect("/sign-in");
 
-  const [{ type, items }, sidebarTypes, collectionOptions] = await Promise.all([
-    getItemsByType(slug, session.user.id),
-    getSidebarItemTypes(session.user.id),
-    getCollectionsForPicker(session.user.id),
-  ]);
+  const [{ type, items, currentPage, totalPages }, sidebarTypes, collectionOptions] =
+    await Promise.all([
+      getItemsByType(slug, session.user.id, page),
+      getSidebarItemTypes(session.user.id),
+      getCollectionsForPicker(session.user.id),
+    ]);
 
   // Unknown type slug (not one of the system types) → 404.
   if (!type) notFound();
@@ -84,6 +90,12 @@ export default async function ItemsByTypePage({
           )}
         </div>
       )}
+
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        basePath={`/items/${type.slug}`}
+      />
     </div>
   );
 }
