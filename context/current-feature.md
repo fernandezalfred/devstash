@@ -1,14 +1,25 @@
-# Current Feature
+# Current Feature: Settings Page
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- New protected page at `/settings`
+- Sidebar's user-icon dropdown (`UserMenu.tsx`, bottom of sidebar) gains a "Settings" link alongside the existing Profile link and Sign out
+- `/settings` is protected the same way `/profile` etc. are (proxy matcher + a local session guard/redirect on the page)
+- The Account actions currently on `/profile` — Change password and Delete account (the "Account" section, incl. its "Danger zone") — move to `/settings` and are removed from `/profile`
+- `/profile` keeps its user-info card and Usage stats section; only the Account section relocates
 
 ## Notes
+
+- Source page: `src/app/profile/page.tsx` — the "Account actions" section (`ChangePasswordForm` gated on `user.hasPassword`, `DeleteAccountDialog` in the danger zone) is what moves. Both components (`src/components/profile/ChangePasswordForm.tsx`, `src/components/profile/DeleteAccountDialog.tsx`) can likely move/relocate as-is (or stay in `src/components/profile/` and just be imported from the new page — decide at implementation time per file-organization conventions).
+- `getProfileUser()` (`src/lib/db/users.ts`) already returns `hasPassword`/`email` needed to gate/render these actions — reuse it on `/settings` rather than adding a new query.
+- Sidebar dropdown to edit: `src/components/dashboard/UserMenu.tsx` — add a `DropdownMenuItem` linking to `/settings` (mirror the existing Profile `DropdownMenuItem`, pick an appropriate lucide icon e.g. `Settings`).
+- Protection pattern to follow (matches `/profile`, `/items`, `/collections`): add `/settings/:path*` to `src/proxy.ts`'s matcher, plus a local `redirect("/sign-in")` guard on the page itself (`getProfileUser()` returning null, or equivalent).
+- Resolved at load time (user confirmed): "forgot password" in the original ask was a misnomer for the existing **change password** action — no new forgot-password UI is being added to `/settings`; the standalone logged-out `/forgot-password` flow is untouched.
+- Out of scope unless the user says otherwise: no other profile content (avatar, plan badge, usage stats, "Member since") moves — only the Account section.
 
 
 <!-- Keep this updated. Earliest to latest -->
