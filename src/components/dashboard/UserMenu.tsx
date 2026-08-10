@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LogOut, User as UserIcon } from "lucide-react";
+import { LogOut, Settings, User as UserIcon } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -65,6 +65,12 @@ export function UserMenu({ name, email, image, isPro }: UserMenuProps) {
             <Link href="/profile">
               <UserIcon />
               Profile
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/settings">
+              <Settings />
+              Settings
             </Link>
           </DropdownMenuItem>
           <DropdownMenuSeparator />

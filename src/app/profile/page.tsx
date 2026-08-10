@@ -2,8 +2,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { Avatar } from "@/components/ui/avatar";
-import { ChangePasswordForm } from "@/components/profile/ChangePasswordForm";
-import { DeleteAccountDialog } from "@/components/profile/DeleteAccountDialog";
 import { getProfileUser } from "@/lib/db/users";
 import { getProfileStats } from "@/lib/db/profile";
 import { itemTypeIcons } from "@/lib/item-icons";
@@ -97,32 +95,6 @@ export default async function ProfilePage() {
             );
           })}
         </ul>
-      </section>
-
-      {/* Account actions */}
-      <section className="rounded-xl border border-border bg-card p-6">
-        <h2 className="text-sm font-semibold tracking-wide text-muted-foreground uppercase">
-          Account
-        </h2>
-
-        {user.hasPassword && (
-          <div className="mt-4">
-            <h3 className="text-sm font-medium">Change password</h3>
-            <div className="mt-3">
-              <ChangePasswordForm />
-            </div>
-          </div>
-        )}
-
-        <div className="mt-6 border-t border-border pt-6">
-          <h3 className="text-sm font-medium text-destructive">Danger zone</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Permanently delete your account and all of your data.
-          </p>
-          <div className="mt-3">
-            <DeleteAccountDialog email={user.email} />
-          </div>
-        </div>
       </section>
     </main>
   );
