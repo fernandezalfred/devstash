@@ -3,7 +3,9 @@ import { redirect } from "next/navigation";
 
 import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
 import { DeleteAccountDialog } from "@/components/settings/DeleteAccountDialog";
-import { getProfileUser } from "@/lib/db/users";
+import { EditorPreferencesProvider } from "@/components/settings/EditorPreferencesContext";
+import { EditorPreferencesSection } from "@/components/settings/EditorPreferencesSection";
+import { getEditorPreferences, getProfileUser } from "@/lib/db/users";
 
 // Protected by the proxy (matcher includes /settings), with a guard here too.
 export const dynamic = "force-dynamic";
@@ -11,6 +13,8 @@ export const dynamic = "force-dynamic";
 export default async function SettingsPage() {
   const user = await getProfileUser();
   if (!user) redirect("/sign-in");
+
+  const editorPreferences = await getEditorPreferences(user.id);
 
   return (
     <main className="mx-auto max-w-2xl space-y-6 p-6">
@@ -48,6 +52,10 @@ export default async function SettingsPage() {
           </div>
         </div>
       </section>
+
+      <EditorPreferencesProvider initialPreferences={editorPreferences}>
+        <EditorPreferencesSection />
+      </EditorPreferencesProvider>
     </main>
   );
 }

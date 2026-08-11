@@ -6,7 +6,7 @@ import {
   getDashboardCollections,
 } from "@/lib/db/collections";
 import { getSearchableItems, getSidebarItemTypes } from "@/lib/db/items";
-import { getCurrentUser } from "@/lib/db/users";
+import { getCurrentUser, getEditorPreferences } from "@/lib/db/users";
 
 // Wrap the collections pages in the same shell as the dashboard/items pages
 // (sidebar links here). Fetch the sidebar's types and collections per-request
@@ -24,12 +24,13 @@ export default async function CollectionsLayout({
   // never null below (and to cover any session/DB drift).
   if (!user) redirect("/sign-in");
 
-  const [itemTypes, collections, collectionOptions, searchItems] =
+  const [itemTypes, collections, collectionOptions, searchItems, editorPreferences] =
     await Promise.all([
       getSidebarItemTypes(user.id),
       getDashboardCollections(user.id),
       getCollectionsForPicker(user.id),
       getSearchableItems(user.id),
+      getEditorPreferences(user.id),
     ]);
 
   return (
@@ -39,6 +40,7 @@ export default async function CollectionsLayout({
       collectionOptions={collectionOptions}
       searchItems={searchItems}
       user={user}
+      editorPreferences={editorPreferences}
     >
       {children}
     </DashboardShell>

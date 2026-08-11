@@ -6,6 +6,10 @@ import type { BeforeMount, OnMount } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 import { Check, Copy } from "lucide-react";
 
+import { useEditorPreferences } from "@/components/settings/EditorPreferencesContext";
+import { type EditorTheme } from "@/lib/editor-preferences";
+import { cn } from "@/lib/utils";
+
 // Monaco touches the DOM/window on import, so it must be client-only. The dynamic
 // import with ssr:false keeps it out of the server bundle; the loading fallback
 // mirrors the editor surface so there's no layout jump.
@@ -14,9 +18,27 @@ const MonacoEditor = dynamic(() => import("@monaco-editor/react"), {
   loading: () => <div className="h-32 animate-pulse bg-[#1e1e1e]" />,
 });
 
-const THEME_NAME = "devstash-dark";
 const MAX_HEIGHT = 400;
 const MIN_HEIGHT = 88;
+
+// Monaco's own registry is global (defined once, referenced by name
+// thereafter), so each of the three theme choices gets a distinct internal
+// name. Only "vs-dark" is a Monaco built-in base — monokai and github-dark
+// are hand-defined here (approximating their well-known published palettes)
+// since Monaco doesn't ship them.
+const MONACO_THEME_NAMES: Record<EditorTheme, string> = {
+  "vs-dark": "devstash-dark",
+  monokai: "devstash-monokai",
+  "github-dark": "devstash-github-dark",
+};
+
+// Our own title-bar chrome sits outside Monaco's canvas, so it's matched to
+// each theme's background here to avoid a visible seam at the editor's edge.
+const THEME_CHROME: Record<EditorTheme, { wrapper: string; titleBar: string }> = {
+  "vs-dark": { wrapper: "bg-[#1e1e1e]", titleBar: "border-white/10 bg-[#252526]" },
+  monokai: { wrapper: "bg-[#272822]", titleBar: "border-white/10 bg-[#3e3d32]" },
+  "github-dark": { wrapper: "bg-[#0d1117]", titleBar: "border-white/10 bg-[#161b22]" },
+};
 
 // Free-text language hints (from the item's `language` field) mapped to Monaco
 // language ids. Falls back to plaintext for anything unrecognized.
@@ -79,8 +101,12 @@ export function codeFallbackLanguage(typeName: string): string {
   return typeName === "command" ? "shell" : "plaintext";
 }
 
+// Defines all three named themes up front (not just the initially active
+// one) so switching the `theme` prop later — e.g. after the user changes
+// their preference on /settings, in an editor mounted before that change —
+// never references an undefined theme name.
 const defineTheme: BeforeMount = (monaco) => {
-  monaco.editor.defineTheme(THEME_NAME, {
+  monaco.editor.defineTheme(MONACO_THEME_NAMES["vs-dark"], {
     base: "vs-dark",
     inherit: true,
     rules: [],
@@ -89,6 +115,54 @@ const defineTheme: BeforeMount = (monaco) => {
       "editorGutter.background": "#1e1e1e",
       "editorLineNumber.foreground": "#5a5a5a",
       "editorLineNumber.activeForeground": "#c6c6c6",
+      "scrollbarSlider.background": "#ffffff20",
+      "scrollbarSlider.hoverBackground": "#ffffff33",
+      "scrollbarSlider.activeBackground": "#ffffff44",
+    },
+  });
+
+  monaco.editor.defineTheme(MONACO_THEME_NAMES.monokai, {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "comment", foreground: "75715e" },
+      { token: "string", foreground: "e6db74" },
+      { token: "keyword", foreground: "f92672" },
+      { token: "number", foreground: "ae81ff" },
+      { token: "type", foreground: "66d9ef" },
+      { token: "function", foreground: "a6e22e" },
+      { token: "variable", foreground: "f8f8f2" },
+    ],
+    colors: {
+      "editor.background": "#272822",
+      "editor.foreground": "#f8f8f2",
+      "editorGutter.background": "#272822",
+      "editorLineNumber.foreground": "#75715e",
+      "editorLineNumber.activeForeground": "#f8f8f2",
+      "scrollbarSlider.background": "#ffffff20",
+      "scrollbarSlider.hoverBackground": "#ffffff33",
+      "scrollbarSlider.activeBackground": "#ffffff44",
+    },
+  });
+
+  monaco.editor.defineTheme(MONACO_THEME_NAMES["github-dark"], {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "comment", foreground: "8b949e" },
+      { token: "string", foreground: "a5d6ff" },
+      { token: "keyword", foreground: "ff7b72" },
+      { token: "number", foreground: "79c0ff" },
+      { token: "type", foreground: "ffa657" },
+      { token: "function", foreground: "d2a8ff" },
+      { token: "variable", foreground: "c9d1d9" },
+    ],
+    colors: {
+      "editor.background": "#0d1117",
+      "editor.foreground": "#c9d1d9",
+      "editorGutter.background": "#0d1117",
+      "editorLineNumber.foreground": "#6e7681",
+      "editorLineNumber.activeForeground": "#c9d1d9",
       "scrollbarSlider.background": "#ffffff20",
       "scrollbarSlider.hoverBackground": "#ffffff33",
       "scrollbarSlider.activeBackground": "#ffffff44",
@@ -120,10 +194,13 @@ function CodeEditorImpl({
   language,
   fallbackLanguage = "plaintext",
 }: CodeEditorProps) {
+  const { preferences } = useEditorPreferences();
   const readOnly = onChange === undefined;
   const monacoLanguage = toMonacoLanguage(language, fallbackLanguage);
   const label =
     language?.trim() || (monacoLanguage !== "plaintext" ? monacoLanguage : "code");
+  const monacoTheme = MONACO_THEME_NAMES[preferences.theme];
+  const chrome = THEME_CHROME[preferences.theme];
 
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
@@ -182,10 +259,11 @@ function CodeEditorImpl({
       // Suppress Monaco's "Cannot edit in read-only editor" popup on the display
       // editor — the content is still selectable/copyable, just not editable.
       readOnlyMessage: readOnly ? { value: "" } : undefined,
-      minimap: { enabled: false },
+      minimap: { enabled: preferences.minimap },
+      wordWrap: preferences.wordWrap ? "on" : "off",
       scrollBeyondLastLine: false,
-      fontSize: 13,
-      lineHeight: 20,
+      fontSize: preferences.fontSize,
+      tabSize: preferences.tabSize,
       lineNumbersMinChars: 3,
       padding: { top: 12, bottom: 12 },
       fontFamily: "var(--font-mono), ui-monospace, monospace",
@@ -202,13 +280,24 @@ function CodeEditorImpl({
       },
       automaticLayout: true,
     }),
-    [readOnly],
+    [
+      readOnly,
+      preferences.minimap,
+      preferences.wordWrap,
+      preferences.fontSize,
+      preferences.tabSize,
+    ],
   );
 
   return (
-    <div className="overflow-hidden rounded-md border border-border bg-[#1e1e1e]">
+    <div
+      className={cn(
+        "overflow-hidden rounded-md border border-border",
+        chrome.wrapper,
+      )}
+    >
       {/* macOS-style title bar */}
-      <div className="flex items-center gap-2 border-b border-white/10 bg-[#252526] px-3 py-2">
+      <div className={cn("flex items-center gap-2 border-b px-3 py-2", chrome.titleBar)}>
         <span className="flex items-center gap-1.5" aria-hidden>
           <span className="size-3 rounded-full bg-[#ff5f57]" />
           <span className="size-3 rounded-full bg-[#febc2e]" />
@@ -257,7 +346,7 @@ function CodeEditorImpl({
           // edit is saved). Editable: uncontrolled to avoid keystroke churn.
           {...(readOnly ? { value } : { defaultValue: initialValue })}
           onChange={handleChange}
-          theme={THEME_NAME}
+          theme={monacoTheme}
           beforeMount={defineTheme}
           onMount={handleMount}
           options={options}
