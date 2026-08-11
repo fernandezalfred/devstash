@@ -30,6 +30,11 @@ model User {
   stripeCustomerId     String? @unique
   stripeSubscriptionId String? @unique
 
+  // Monaco editor preferences (font size, tab size, word wrap, minimap,
+  // theme). Null until the user changes a preference; app code fills in
+  // defaults for a null value.
+  editorPreferences Json?
+
   // Relations
   accounts    Account[]
   sessions    Session[]

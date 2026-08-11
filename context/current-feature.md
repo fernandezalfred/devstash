@@ -1,14 +1,26 @@
-# Current Feature
+# Current Feature: Editor Preferences Settings
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- New "Editor" section on `/settings` (below the existing Account section) with: font size dropdown, tab size dropdown, word wrap toggle (default on), minimap toggle (default off), theme dropdown (vs-dark / monokai / github-dark, default vs-dark)
+- Preferences persist to a new `editorPreferences` JSON column on `User`, via a real Prisma migration (`prisma migrate dev` — never `db push`)
+- New server action to update preferences, following this repo's `{success,data|error}` Zod-validated pattern
+- Every change auto-saves immediately (no Save button) and shows a success toast
+- New `EditorPreferencesContext` (client) that the Monaco `CodeEditor` component (`src/components/items/CodeEditor.tsx`) reads from, so font size/tab size/word wrap/minimap/theme apply everywhere it renders (item drawer display + edit form, create-item dialog) without threading props through each call site
 
 ## Notes
+
+- Spec: `context/features/editor-settings-spec.md`
+- Schema: add `editorPreferences Json?` (nullable, no default/backfill needed) to `model User` in `prisma/schema.prisma`; app code supplies defaults when null. No other model changes.
+- `CodeEditor.tsx` currently hardcodes the things this feature makes configurable: a single custom `devstash-dark` Monaco theme (`base: "vs-dark"`), `minimap: { enabled: false }`, `fontSize: 13`, and no explicit `tabSize`/`wordWrap` (Monaco defaults). Making these configurable is a real change to that file, not just new props — `monaco.editor.defineTheme` will need distinct definitions for vs-dark/monokai/github-dark (monokai and github-dark aren't Monaco built-ins) with `theme` switching between them.
+- **Scope is Monaco only, per spec wording ("Apply settings to Monaco editor component").** `MarkdownEditor.tsx`'s plain `<textarea>` (prompt/note types) is unaffected — these settings don't apply there.
+- Recommended provider placement (to avoid re-fetching per protected layout): mount `EditorPreferencesProvider` once in the root layout (`src/app/layout.tsx`), server-fetching the signed-in user's `editorPreferences` (or defaults when unauthenticated/unset) — covers every `CodeEditor` call site (`ItemDrawer.tsx` ×2, `CreateItemDialog.tsx` ×1) plus `/settings` itself for the new form's initial values, without threading through `dashboard/`, `items/`, and `collections/` layouts separately.
+- Decisions left to implementation time (not architecturally significant, will note actual values taken in the History entry): exact font-size/tab-size dropdown option lists, and the concrete color tokens for the monokai/github-dark Monaco theme definitions.
+- No server-action tests exist yet for this action — add Vitest coverage per the established convention (mock `@/auth` + the DB query at the module boundary, matching `src/actions/items.test.ts`).
 
 <!-- Keep this updated. Earliest to latest -->
 
