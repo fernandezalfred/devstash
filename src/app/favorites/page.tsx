@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { Star } from "lucide-react";
 
 import { auth } from "@/auth";
-import { FavoriteCollectionRow } from "@/components/favorites/FavoriteCollectionRow";
-import { FavoriteItemRow } from "@/components/favorites/FavoriteItemRow";
+import { FavoriteCollectionsSection } from "@/components/favorites/FavoriteCollectionsSection";
+import { FavoriteItemsSection } from "@/components/favorites/FavoriteItemsSection";
 import { getFavoriteCollections } from "@/lib/db/collections";
 import { getFavoriteItems } from "@/lib/db/items";
 
@@ -36,39 +36,8 @@ export default async function FavoritesPage() {
         </div>
       ) : (
         <>
-          <section>
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Items ({items.length})
-            </h2>
-            {items.length === 0 ? (
-              <p className="px-3 py-2 text-sm text-muted-foreground">
-                No favorited items.
-              </p>
-            ) : (
-              <div className="divide-y divide-border border-y border-border">
-                {items.map((item) => (
-                  <FavoriteItemRow key={item.id} item={item} />
-                ))}
-              </div>
-            )}
-          </section>
-
-          <section>
-            <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Collections ({collections.length})
-            </h2>
-            {collections.length === 0 ? (
-              <p className="px-3 py-2 text-sm text-muted-foreground">
-                No favorited collections.
-              </p>
-            ) : (
-              <div className="divide-y divide-border border-y border-border">
-                {collections.map((collection) => (
-                  <FavoriteCollectionRow key={collection.id} collection={collection} />
-                ))}
-              </div>
-            )}
-          </section>
+          <FavoriteItemsSection items={items} />
+          <FavoriteCollectionsSection collections={collections} />
         </>
       )}
     </div>

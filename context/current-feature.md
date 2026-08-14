@@ -1,14 +1,23 @@
-# Current Feature
+# Current Feature: Favorites Page Sorting
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- Add client-side sort controls to the `/favorites` page's Items section — sort by Name (alphabetical), Date (most recently favorited, today's default via `updatedAt`), and Item Type (grouped/ordered by type)
+- Add client-side sort controls to the Collections section — sort by Name and Date (no Item Type axis, since collections aren't typed)
+- Sorting is purely client-side over the already-fetched full list — no new fetch, no page reload, no `router.refresh()`
+- Preserve the existing look (monospace, dense terminal-style rows, sections with counts) — this is additive controls, not a redesign
+- Empty-list and single-item behavior unaffected (sorting a 0- or 1-length list is a no-op)
 
 ## Notes
+
+- No spec file — inline description from the user: "Add client-side [sorting] to the favorites page. We should be able to sort by name, date and item type."
+- Scoping call: "item type" as a sort axis only makes sense for the Items section (`FavoriteItemRow` has a type icon + slug already); the Collections section will only get Name/Date. Flag this at start in case the user wants a different treatment for collections (e.g. sort by item count instead).
+- Current implementation (`src/app/favorites/page.tsx`, server component) fetches `getFavoriteItems`/`getFavoriteCollections` (both already return the full set, no pagination) and renders them straight into `FavoriteItemRow`/`FavoriteCollectionRow` lists. Adding client-side sort state means the two list sections need to become (or be wrapped in) client components that receive the full array as a prop and hold local sort state — the page itself can stay a server component that just fetches and passes data down.
+- No DB/query changes expected — this is purely a presentational reordering of data already being fetched in full.
 
 <!-- Keep this updated. Earliest to latest -->
 
