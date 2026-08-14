@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PanelLeft, Search, Sparkles } from "lucide-react";
+import { PanelLeft, Search, Sparkles, Star } from "lucide-react";
 
 import { CreateCollectionDialog } from "@/components/dashboard/CreateCollectionDialog";
 import { CreateItemDialog } from "@/components/items/CreateItemDialog";
@@ -65,6 +65,11 @@ export function TopBar({
       </div>
 
       <div className="flex items-center gap-2">
+        <Button variant="ghost" size="icon-sm" aria-label="Favorites" asChild>
+          <Link href="/favorites">
+            <Star className="size-4" />
+          </Link>
+        </Button>
         <CreateCollectionDialog />
         <CreateItemDialog types={itemTypes} collections={collectionOptions} />
       </div>

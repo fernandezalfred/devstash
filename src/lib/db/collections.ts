@@ -22,11 +22,14 @@ export interface DashboardCollection {
   itemCount: number;
   types: CollectionTypeSummary[]; // distinct types present, most-frequent first
   accentColor: string | null; // dominant (most-used) type's color
+  updatedAt: string; // ISO date
 }
 
 // What the collection-tallying queries below need from the database. The 7
 // system types are constant, so only pull the fields the card needs instead
 // of every column of itemType for every item.
+// Scalar fields (e.g. updatedAt) are returned automatically alongside this —
+// `include` only needs to name relations, unlike `select`.
 const collectionWithItemTypesInclude = {
   items: {
     select: {
@@ -46,6 +49,7 @@ type CollectionWithItemTypes = {
   name: string;
   description: string | null;
   isFavorite: boolean;
+  updatedAt: Date;
   items: { item: { itemType: CollectionTypeSummary } }[];
 };
 
@@ -75,6 +79,7 @@ function toDashboardCollection(
     itemCount: collection.items.length,
     types: ranked.map((entry) => entry.type),
     accentColor: ranked[0]?.type.color ?? null,
+    updatedAt: collection.updatedAt.toISOString(),
   };
 }
 
@@ -99,6 +104,20 @@ export const getDashboardCollections = cache(
     return collections.map(toDashboardCollection);
   },
 );
+
+// All of a user's favorited collections, most recently updated first (see
+// getFavoriteItems in items.ts for the same "updatedAt as favorited-at proxy"
+// note). Fetches the full set, no pagination, matching the favorites page spec.
+export async function getFavoriteCollections(
+  userId: string,
+): Promise<DashboardCollection[]> {
+  const collections = await prisma.collection.findMany({
+    where: { userId, isFavorite: true },
+    orderBy: { updatedAt: "desc" },
+    include: collectionWithItemTypesInclude,
+  });
+  return collections.map(toDashboardCollection);
+}
 
 export interface DashboardCollectionStats {
   total: number;
