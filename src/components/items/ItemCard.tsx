@@ -4,9 +4,12 @@ import { useEffect, useState } from "react";
 
 import { Check, Copy, Pin, Star } from "lucide-react";
 
+import { toggleItemFavorite } from "@/actions/items";
 import { useItemDrawer } from "@/components/items/ItemDrawer";
+import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
 import { type DashboardItem } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
+import { cn } from "@/lib/utils";
 
 function formatItemDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -22,6 +25,10 @@ export function ItemCard({ item }: { item: DashboardItem }) {
   const accent = item.typeColor;
   const { open } = useItemDrawer();
   const [copied, setCopied] = useState(false);
+  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+    item.isFavorite,
+    () => toggleItemFavorite(item.id),
+  );
 
   useEffect(() => {
     if (!copied) return;
@@ -43,14 +50,23 @@ export function ItemCard({ item }: { item: DashboardItem }) {
     }
   }
 
+  async function handleToggleFavorite(event: React.MouseEvent) {
+    event.stopPropagation();
+    await toggleFavorite();
+  }
+
   return (
-    // A div instead of a <button> so the quick-copy <button> isn't nested
-    // inside a button (invalid HTML); keyboard access mirrors a button.
+    // A div instead of a <button> so the quick-copy/favorite <button>s aren't
+    // nested inside a button (invalid HTML); keyboard access mirrors a button.
     <div
       role="button"
       tabIndex={0}
       onClick={() => open(item.id)}
       onKeyDown={(event) => {
+        // Guard against Space/Enter on a nested button (copy/favorite)
+        // bubbling here too — only react when the card itself is the target
+        // (same fix as CollectionCard's Space-key navigation bug).
+        if (event.target !== event.currentTarget) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           open(item.id);
@@ -72,9 +88,19 @@ export function ItemCard({ item }: { item: DashboardItem }) {
             {item.isPinned && (
               <Pin className="size-3 shrink-0 text-muted-foreground" />
             )}
-            {item.isFavorite && (
-              <Star className="size-3 shrink-0 fill-yellow-400 text-yellow-400" />
-            )}
+            <button
+              type="button"
+              onClick={handleToggleFavorite}
+              aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
+              className="shrink-0 text-muted-foreground transition-colors hover:text-yellow-400"
+            >
+              <Star
+                className={cn(
+                  "size-3",
+                  favorite && "fill-yellow-400 text-yellow-400",
+                )}
+              />
+            </button>
           </div>
           {item.description && (
             <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">

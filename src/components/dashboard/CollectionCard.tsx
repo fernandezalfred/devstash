@@ -12,8 +12,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
+import { toggleCollectionFavorite } from "@/lib/collections-client";
 import { type DashboardCollection } from "@/lib/db/collections";
 import { itemTypeIcons } from "@/lib/item-icons";
+import { cn } from "@/lib/utils";
 
 // A single collection card. A colored left border reflects the dominant item
 // type; the bottom row shows an icon per item type present in the collection.
@@ -26,6 +29,10 @@ export function CollectionCard({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { accentColor, types } = collection;
+  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+    collection.isFavorite,
+    () => toggleCollectionFavorite(collection.id),
+  );
 
   return (
     // A div instead of a <Link> so the menu trigger button isn't nested inside
@@ -57,7 +64,7 @@ export function CollectionCard({
     >
       <h3 className="flex items-center gap-1.5 pr-6 font-medium">
         <span className="truncate">{collection.name}</span>
-        {collection.isFavorite && (
+        {favorite && (
           <Star className="size-3.5 shrink-0 fill-yellow-400 text-yellow-400" />
         )}
       </h3>
@@ -111,8 +118,9 @@ export function CollectionCard({
             >
               <Trash2 /> Delete
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Star /> Favorite
+            <DropdownMenuItem onSelect={() => toggleFavorite()}>
+              <Star className={cn(favorite && "fill-yellow-400 text-yellow-400")} />
+              {favorite ? "Unfavorite" : "Favorite"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

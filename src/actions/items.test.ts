@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createItem, deleteItem, updateItem } from "@/actions/items";
+import {
+  createItem,
+  deleteItem,
+  toggleItemFavorite,
+  updateItem,
+} from "@/actions/items";
 import { auth } from "@/auth";
 import {
   createItem as createItemQuery,
   deleteItem as deleteItemQuery,
+  toggleItemFavorite as toggleItemFavoriteQuery,
   updateItem as updateItemQuery,
 } from "@/lib/db/items";
 import { deleteFromR2 } from "@/lib/r2";
@@ -17,6 +23,7 @@ vi.mock("@/lib/db/items", () => ({
   updateItem: vi.fn(),
   deleteItem: vi.fn(),
   createItem: vi.fn(),
+  toggleItemFavorite: vi.fn(),
 }));
 vi.mock("@/lib/r2", () => ({ deleteFromR2: vi.fn() }));
 
@@ -24,6 +31,7 @@ const mockedAuth = vi.mocked(auth);
 const mockedQuery = vi.mocked(updateItemQuery);
 const mockedDeleteQuery = vi.mocked(deleteItemQuery);
 const mockedCreateQuery = vi.mocked(createItemQuery);
+const mockedToggleFavoriteQuery = vi.mocked(toggleItemFavoriteQuery);
 const mockedDeleteFromR2 = vi.mocked(deleteFromR2);
 
 // A minimal ItemDetail the query can echo back on success.
@@ -61,6 +69,7 @@ beforeEach(() => {
   mockedQuery.mockResolvedValue(fakeItem);
   mockedDeleteQuery.mockResolvedValue({ deleted: true, fileKey: null });
   mockedCreateQuery.mockResolvedValue(fakeItem);
+  mockedToggleFavoriteQuery.mockResolvedValue(true);
 });
 
 const validCreate = {
@@ -296,6 +305,46 @@ describe("createItem action", () => {
     expect(result).toEqual({
       success: false,
       error: "Could not create the item. Please try again.",
+    });
+  });
+});
+
+describe("toggleItemFavorite action", () => {
+  it("rejects when there is no session", async () => {
+    mockedAuth.mockResolvedValue(null as never);
+    const result = await toggleItemFavorite("item-1");
+    expect(result).toEqual({
+      success: false,
+      error: "You must be signed in to do that.",
+    });
+    expect(mockedToggleFavoriteQuery).not.toHaveBeenCalled();
+  });
+
+  it("returns the new favorite value on success", async () => {
+    mockedToggleFavoriteQuery.mockResolvedValue(true);
+    const result = await toggleItemFavorite("item-1");
+    expect(result).toEqual({ success: true, data: { isFavorite: true } });
+    expect(mockedToggleFavoriteQuery).toHaveBeenCalledWith("item-1", "user-1");
+  });
+
+  it("reflects the flip back to false on a second toggle", async () => {
+    mockedToggleFavoriteQuery.mockResolvedValue(false);
+    const result = await toggleItemFavorite("item-1");
+    expect(result).toEqual({ success: true, data: { isFavorite: false } });
+  });
+
+  it("returns not-found when the query returns null", async () => {
+    mockedToggleFavoriteQuery.mockResolvedValue(null);
+    const result = await toggleItemFavorite("item-1");
+    expect(result).toEqual({ success: false, error: "Item not found." });
+  });
+
+  it("returns a friendly error when the query throws", async () => {
+    mockedToggleFavoriteQuery.mockRejectedValue(new Error("db down"));
+    const result = await toggleItemFavorite("item-1");
+    expect(result).toEqual({
+      success: false,
+      error: "Could not update favorite. Please try again.",
     });
   });
 });

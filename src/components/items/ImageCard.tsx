@@ -4,8 +4,11 @@ import { useState } from "react";
 
 import { ImageOff, Pin, Star } from "lucide-react";
 
+import { toggleItemFavorite } from "@/actions/items";
 import { useItemDrawer } from "@/components/items/ItemDrawer";
+import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
 import { type DashboardItem } from "@/lib/db/items";
+import { cn } from "@/lib/utils";
 
 function formatItemDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", {
@@ -20,12 +23,34 @@ function formatItemDate(iso: string): string {
 export function ImageCard({ item }: { item: DashboardItem }) {
   const { open } = useItemDrawer();
   const [failed, setFailed] = useState(false);
+  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+    item.isFavorite,
+    () => toggleItemFavorite(item.id),
+  );
+
+  async function handleToggleFavorite(event: React.MouseEvent) {
+    event.stopPropagation();
+    await toggleFavorite();
+  }
 
   return (
-    <button
-      type="button"
+    // A div instead of a <button> so the favorite toggle <button> isn't
+    // nested inside a button (invalid HTML); keyboard access mirrors a button.
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => open(item.id)}
-      className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card text-left transition-colors hover:border-foreground/20"
+      onKeyDown={(event) => {
+        // Guard against Space/Enter on the nested favorite button bubbling
+        // here too — only react when the card itself is the target (same
+        // fix as CollectionCard's Space-key navigation bug).
+        if (event.target !== event.currentTarget) return;
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          open(item.id);
+        }
+      }}
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-lg border border-border bg-card text-left transition-colors hover:border-foreground/20 focus-visible:border-foreground/20 focus-visible:outline-none"
     >
       <div className="relative aspect-video w-full overflow-hidden bg-muted">
         {failed ? (
@@ -51,9 +76,19 @@ export function ImageCard({ item }: { item: DashboardItem }) {
           {item.isPinned && (
             <Pin className="size-3 shrink-0 text-muted-foreground" />
           )}
-          {item.isFavorite && (
-            <Star className="size-3 shrink-0 fill-yellow-400 text-yellow-400" />
-          )}
+          <button
+            type="button"
+            onClick={handleToggleFavorite}
+            aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
+            className="shrink-0 text-muted-foreground transition-colors hover:text-yellow-400"
+          >
+            <Star
+              className={cn(
+                "size-3",
+                favorite && "fill-yellow-400 text-yellow-400",
+              )}
+            />
+          </button>
           <span className="ml-auto shrink-0 text-xs text-muted-foreground">
             {formatItemDate(item.updatedAt)}
           </span>
@@ -76,6 +111,6 @@ export function ImageCard({ item }: { item: DashboardItem }) {
           </div>
         )}
       </div>
-    </button>
+    </div>
   );
 }

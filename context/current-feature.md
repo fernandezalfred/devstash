@@ -1,14 +1,25 @@
-# Current Feature
+# Current Feature: Favorite Toggle Buttons
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- Wire up the ItemDrawer's existing "Favorite" action button (currently display-only, `ItemDrawer.tsx`) so clicking it actually toggles `Item.isFavorite` and updates the star immediately
+- Wire up the /collections/[id] header's existing "Favorite" action button (currently display-only, `CollectionHeaderActions.tsx`) so clicking it toggles `Collection.isFavorite`
+- Add a clickable favorite toggle to item cards — `ItemCard`, `ImageCard`, `FileRow` — so items can be favorited/unfavorited directly from the list views, not just the drawer (currently these only render a static star when `isFavorite` is true)
+- Add a clickable favorite toggle to `CollectionCard` (shared by the dashboard grid and `/collections`) — wire up its dropdown's existing "Favorite" menu item, which is currently a no-op
+- Toggling must not trigger the card's own click-to-open/navigate behavior (same stopPropagation pattern already used by `ItemCard`'s quick-copy button and `FileRow`'s download link)
+- Dashboard stats (Favorite Items / Favorite Collections counts) and the Favorites page should reflect the change after toggling (matches the existing `router.refresh()` pattern used by other mutations in this app)
 
 ## Notes
+
+- No spec file — inline description from the user: "Add a favorite button to the drawer, collection page and cards to toggle."
+- Scoping call: "cards" is read as `ItemCard`/`ImageCard`/`FileRow` (the list-view card/row components) and `CollectionCard` — NOT the dashboard's `ItemRow` (pinned/recent lists) or the `/favorites` page's own `FavoriteItemRow`/`FavoriteCollectionRow`, which are named/treated as a different component family. Flag this at start in case the user actually wants those too.
+- Items: `updateItem` (`src/actions/items.ts`) already exists but requires a full edit payload (title, tags, etc.) — not a fit for a lightweight one-field toggle. Plan: add a small dedicated toggle, e.g. `toggleItemFavorite(itemId)` action + matching `src/lib/db/items.ts` query (ownership-scoped, same pattern as `deleteItem`).
+- Collections: this codebase has a **deliberate existing convention** that collection mutations are API routes, not Server Actions (`POST /api/collections`, `PATCH`/`DELETE /api/collections/[id]` — see the 2026-07-28 Collection Create and 2026-08-02 Collection Actions history entries). Favorite toggle should follow that convention rather than introduce a Server Action for collections alone — likely either extending the existing `PATCH /api/collections/[id]` to accept `isFavorite`, or a small dedicated endpoint.
+- No schema change needed — `Item.isFavorite` / `Collection.isFavorite` already exist and are used for read/display everywhere.
 
 <!-- Keep this updated. Earliest to latest -->
 
