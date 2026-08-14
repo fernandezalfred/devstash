@@ -6,6 +6,7 @@ import { auth } from "@/auth";
 import {
   createItem as createItemQuery,
   deleteItem as deleteItemQuery,
+  toggleItemFavorite as toggleItemFavoriteQuery,
   updateItem as updateItemQuery,
   type ItemDetail,
 } from "@/lib/db/items";
@@ -190,5 +191,34 @@ export async function deleteItem(itemId: string): Promise<DeleteResult> {
     return { success: true };
   } catch {
     return { success: false, error: "Could not delete the item. Please try again." };
+  }
+}
+
+type ToggleFavoriteResult =
+  | { success: true; data: { isFavorite: boolean } }
+  | { success: false; error: string };
+
+// Toggle an item's favorite flag. A lightweight companion to updateItem for
+// the drawer/card star buttons, which shouldn't need a full edit payload just
+// to flip one field.
+export async function toggleItemFavorite(
+  itemId: string,
+): Promise<ToggleFavoriteResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "You must be signed in to do that." };
+  }
+
+  try {
+    const isFavorite = await toggleItemFavoriteQuery(itemId, session.user.id);
+    if (isFavorite === null) {
+      return { success: false, error: "Item not found." };
+    }
+    return { success: true, data: { isFavorite } };
+  } catch {
+    return {
+      success: false,
+      error: "Could not update favorite. Please try again.",
+    };
   }
 }

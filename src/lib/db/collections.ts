@@ -246,6 +246,28 @@ export async function updateCollection(
   return { id, name: input.name, description: input.description };
 }
 
+// Toggle Collection.isFavorite for the given (authenticated) owner. Returns
+// the collection's new isFavorite value, or null when it doesn't exist or
+// isn't owned by that user (mirrors deleteCollection's ownership-check
+// pattern) so the route can 404 instead of throwing.
+export async function toggleCollectionFavorite(
+  id: string,
+  userId: string,
+): Promise<boolean | null> {
+  const existing = await prisma.collection.findFirst({
+    where: { id, userId },
+    select: { isFavorite: true },
+  });
+  if (!existing) return null;
+
+  const updated = await prisma.collection.update({
+    where: { id },
+    data: { isFavorite: !existing.isFavorite },
+    select: { isFavorite: true },
+  });
+  return updated.isFavorite;
+}
+
 // Delete a collection, scoped to the given (authenticated) owner. Only the
 // collection and its ItemCollection join rows are removed (the join's
 // `collection` relation cascades — see schema.prisma); the items themselves,

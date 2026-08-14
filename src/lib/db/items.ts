@@ -474,6 +474,28 @@ export async function updateItem(
   return toItemDetail(item);
 }
 
+// Toggle Item.isFavorite for the given user's item. Returns the item's new
+// isFavorite value, or null when the item isn't found under that user
+// (mirrors deleteItem's ownership-check pattern) so the action can report
+// not-found instead of throwing.
+export async function toggleItemFavorite(
+  id: string,
+  userId: string,
+): Promise<boolean | null> {
+  const existing = await prisma.item.findFirst({
+    where: { id, userId },
+    select: { isFavorite: true },
+  });
+  if (!existing) return null;
+
+  const updated = await prisma.item.update({
+    where: { id },
+    data: { isFavorite: !existing.isFavorite },
+    select: { isFavorite: true },
+  });
+  return updated.isFavorite;
+}
+
 export interface DeleteItemResult {
   deleted: boolean;
   // R2 object key of a FILE item's upload, so the calling action can remove

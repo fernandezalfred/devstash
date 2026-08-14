@@ -22,7 +22,7 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { deleteItem, updateItem } from "@/actions/items";
+import { deleteItem, toggleItemFavorite, updateItem } from "@/actions/items";
 import {
   CodeEditor,
   codeFallbackLanguage,
@@ -48,6 +48,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/toast";
+import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
 import { type CollectionOption } from "@/lib/db/collections";
 import { type ItemDetail } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
@@ -170,6 +171,10 @@ function ItemDrawerBody({
   const accent = item.type.color;
   const typeName = item.type.name.toLowerCase();
   const [editing, setEditing] = useState(false);
+  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+    item.isFavorite,
+    () => toggleItemFavorite(item.id),
+  );
 
   if (editing) {
     return (
@@ -211,13 +216,14 @@ function ItemDrawerBody({
           </div>
         </div>
 
-        {/* Action bar — display only for now; wiring comes in a later pass. */}
+        {/* Action bar — Favorite is wired; Pin/Copy remain display-only for now. */}
         <div className="mt-5 flex items-center gap-1">
           <ActionButton
             icon={Star}
             label="Favorite"
-            active={item.isFavorite}
+            active={favorite}
             activeClassName="fill-yellow-400 text-yellow-400"
+            onClick={() => toggleFavorite()}
           />
           <ActionButton
             icon={Pin}

@@ -14,9 +14,12 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
+import { toggleItemFavorite } from "@/actions/items";
 import { useItemDrawer } from "@/components/items/ItemDrawer";
+import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
 import { type DashboardItem } from "@/lib/db/items";
 import { fileExtension, formatBytes } from "@/lib/uploads";
+import { cn } from "@/lib/utils";
 
 // Extension → icon for the file list. Falls back to a generic File icon for
 // anything unmapped (or items with no stored file name).
@@ -53,15 +56,29 @@ export function FileRow({ item }: { item: DashboardItem }) {
   const ext = item.fileName ? fileExtension(item.fileName) : null;
   const icon = (ext && EXTENSION_ICONS[ext]) || File;
   const accent = item.typeColor;
+  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+    item.isFavorite,
+    () => toggleItemFavorite(item.id),
+  );
+
+  async function handleToggleFavorite(event: React.MouseEvent) {
+    event.stopPropagation();
+    await toggleFavorite();
+  }
 
   return (
-    // A div instead of a <button> so the download <a> isn't nested inside a
-    // button (invalid HTML); keyboard access mirrors a button via role/Enter.
+    // A div instead of a <button> so the download <a>/favorite <button> aren't
+    // nested inside a button (invalid HTML); keyboard access mirrors a button.
     <div
       role="button"
       tabIndex={0}
       onClick={() => open(item.id)}
       onKeyDown={(event) => {
+        // Guard against Space/Enter on a nested control (favorite button,
+        // download link) bubbling here too — only react when the row itself
+        // is the target (same fix as CollectionCard's Space-key navigation
+        // bug).
+        if (event.target !== event.currentTarget) return;
         if (event.key === "Enter" || event.key === " ") {
           event.preventDefault();
           open(item.id);
@@ -85,9 +102,19 @@ export function FileRow({ item }: { item: DashboardItem }) {
           {item.isPinned && (
             <Pin className="size-3 shrink-0 text-muted-foreground" />
           )}
-          {item.isFavorite && (
-            <Star className="size-3 shrink-0 fill-yellow-400 text-yellow-400" />
-          )}
+          <button
+            type="button"
+            onClick={handleToggleFavorite}
+            aria-label={favorite ? "Remove from favorites" : "Add to favorites"}
+            className="shrink-0 text-muted-foreground transition-colors hover:text-yellow-400"
+          >
+            <Star
+              className={cn(
+                "size-3",
+                favorite && "fill-yellow-400 text-yellow-400",
+              )}
+            />
+          </button>
         </div>
         <div className="flex items-center gap-3 text-xs text-muted-foreground sm:shrink-0">
           {item.fileName && (
