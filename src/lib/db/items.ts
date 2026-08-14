@@ -96,6 +96,19 @@ export async function getRecentItems(
   return items.map(toDashboardItem);
 }
 
+// All of a user's favorited items, most recently updated first (used as the
+// "most recently favorited" proxy — there's no dedicated favoritedAt column,
+// and toggling isFavorite bumps updatedAt like any other write). Fetches the
+// full set, no pagination, matching the favorites page spec.
+export async function getFavoriteItems(userId: string): Promise<DashboardItem[]> {
+  const items = await prisma.item.findMany({
+    where: { userId, isFavorite: true },
+    orderBy: { updatedAt: "desc" },
+    include: itemInclude,
+  });
+  return items.map(toDashboardItem);
+}
+
 // Lightweight item shape for the global command palette, scoped to the given
 // user. Uses a nested `select` (not `include: { itemType: true }`, matching
 // the 2026-06-19 audit fix elsewhere in this file) so it doesn't refetch

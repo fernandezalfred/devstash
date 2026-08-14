@@ -1,14 +1,27 @@
-# Current Feature
+# Current Feature: Favorites Page
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- Add star icon button to TopBar linking to /favorites
+- Create /favorites route with protection (matches other protected routes' auth guard)
+- Fetch all of the current user's favorited items and collections
+- Compact list view (VS Code/terminal style, not cards)
+- Each row: type icon, title, type badge, date added
+- Separate sections for items and collections, each with a count
+- Click item opens ItemDrawer, click collection navigates to /collections/[id]
+- Empty state when no favorites
+- Sort by most recently favorited (updatedAt)
 
 ## Notes
+
+- Spec: `context/features/favorites-spec.md`.
+- UI style: monospace or semi-monospace font, minimal padding, high density, subtle hover states, no cards or heavy borders — clean lines only.
+- Item favoriting exists on `Item.isFavorite` / `Collection.isFavorite` already (used by dashboard stats); no schema change expected for querying them, just new read queries filtered by `isFavorite: true`.
+- The app has fully moved off demo-user scoping (2026-08-02) — favorites queries should filter by the authenticated `userId`, consistent with the rest of `src/lib/db/*`.
 
 <!-- Keep this updated. Earliest to latest -->
 
