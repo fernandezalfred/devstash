@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DevStash — Stop Losing Your Developer Knowledge</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<nav class="navbar" id="navbar">
+  <div class="nav-inner">
+    <a href="#" class="brand">
+      <span class="brand-mark">&lt;/&gt;</span>
+      <span class="brand-name">DevStash</span>
+    </a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="nav-actions">
+      <a href="#" class="btn btn-ghost">Sign In</a>
+      <a href="#" class="btn btn-primary">Get Started</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-text reveal">
+    <h1 class="hero-headline">
+      Stop Losing Your <span class="gradient-text">Developer Knowledge</span>
+    </h1>
+    <p class="hero-subheadline">
+      Snippets in Notion. Prompts in chat history. Commands in bash history.
+      Bring every scrap of your dev knowledge into one fast, searchable hub.
+    </p>
+    <div class="hero-ctas">
+      <a href="#" class="btn btn-primary btn-lg">Get Started Free</a>
+      <a href="#features" class="btn btn-ghost btn-lg">See Features</a>
+    </div>
+  </div>
+
+  <div class="hero-visual reveal">
+    <!-- Chaos -->
+    <div class="chaos-box" id="chaosBox">
+      <p class="visual-label">Your knowledge today...</p>
+      <div class="chaos-icons" id="chaosIcons">
+        <div class="chaos-icon" data-tool="notion" style="--c:#ffffff;"><span>N</span></div>
+        <div class="chaos-icon" data-tool="github" style="--c:#f0f6fc;"><span>&lt;/&gt;</span></div>
+        <div class="chaos-icon" data-tool="slack" style="--c:#e01e5a;"><span>#</span></div>
+        <div class="chaos-icon" data-tool="vscode" style="--c:#3b82f6;"><span>{ }</span></div>
+        <div class="chaos-icon" data-tool="tabs" style="--c:#22c55e;"><span>▭▭</span></div>
+        <div class="chaos-icon" data-tool="terminal" style="--c:#06b6d4;"><span>&gt;_</span></div>
+        <div class="chaos-icon" data-tool="textfile" style="--c:#f59e0b;"><span>≡</span></div>
+        <div class="chaos-icon" data-tool="bookmark" style="--c:#6366f1;"><span>🔖</span></div>
+      </div>
+    </div>
+
+    <!-- Arrow -->
+    <div class="transform-arrow" aria-hidden="true">
+      <svg viewBox="0 0 100 24" class="arrow-svg">
+        <line x1="2" y1="12" x2="88" y2="12" stroke="url(#arrowGrad)" stroke-width="3" stroke-linecap="round"/>
+        <polyline points="72,2 90,12 72,22" fill="none" stroke="url(#arrowGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+        <defs>
+          <linearGradient id="arrowGrad" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="#3b82f6"/>
+            <stop offset="100%" stop-color="#8b5cf6"/>
+          </linearGradient>
+        </defs>
+      </svg>
+    </div>
+
+    <!-- Order -->
+    <div class="dashboard-box">
+      <p class="visual-label">...with DevStash</p>
+      <div class="mock-dashboard">
+        <div class="mock-sidebar">
+          <div class="mock-nav-item active"><span class="dot" style="--c:#3b82f6"></span>Snippets</div>
+          <div class="mock-nav-item"><span class="dot" style="--c:#f59e0b"></span>Prompts</div>
+          <div class="mock-nav-item"><span class="dot" style="--c:#06b6d4"></span>Commands</div>
+          <div class="mock-nav-item"><span class="dot" style="--c:#22c55e"></span>Notes</div>
+          <div class="mock-nav-item"><span class="dot" style="--c:#ec4899"></span>Images</div>
+          <div class="mock-nav-item"><span class="dot" style="--c:#6366f1"></span>Links</div>
+        </div>
+        <div class="mock-grid">
+          <div class="mock-card" style="--accent:#3b82f6"></div>
+          <div class="mock-card" style="--accent:#f59e0b"></div>
+          <div class="mock-card" style="--accent:#06b6d4"></div>
+          <div class="mock-card" style="--accent:#22c55e"></div>
+          <div class="mock-card" style="--accent:#ec4899"></div>
+          <div class="mock-card" style="--accent:#6366f1"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="features" id="features">
+  <div class="section-inner">
+    <h2 class="section-title reveal">Everything, in one place</h2>
+    <p class="section-subtitle reveal">One fast hub for every kind of developer knowledge.</p>
+    <div class="features-grid">
+      <div class="feature-card reveal" style="--accent:#3b82f6">
+        <div class="feature-icon">&lt;/&gt;</div>
+        <h3>Code Snippets</h3>
+        <p>Save reusable code with syntax highlighting and language tags, ready to copy in one click.</p>
+      </div>
+      <div class="feature-card reveal" style="--accent:#f59e0b">
+        <div class="feature-icon">✦</div>
+        <h3>AI Prompts</h3>
+        <p>Keep your best prompts, system messages, and workflows so you never rewrite them from scratch.</p>
+      </div>
+      <div class="feature-card reveal" style="--accent:#06b6d4">
+        <div class="feature-icon">⌘</div>
+        <h3>Instant Search</h3>
+        <p>Full-text search across content, tags, titles, and types — find anything in milliseconds.</p>
+      </div>
+      <div class="feature-card reveal" style="--accent:#22c55e">
+        <div class="feature-icon">&gt;_</div>
+        <h3>Commands</h3>
+        <p>Stash the terminal one-liners you always forget, organized and one search away.</p>
+      </div>
+      <div class="feature-card reveal" style="--accent:#64748b">
+        <div class="feature-icon">▤</div>
+        <h3>Files &amp; Docs</h3>
+        <p>Upload reference files, context docs, and images without losing track of them again.</p>
+      </div>
+      <div class="feature-card reveal" style="--accent:#ec4899">
+        <div class="feature-icon">▦</div>
+        <h3>Collections</h3>
+        <p>Group related items into color-coded collections for projects, patterns, or workflows.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ai-section" id="ai">
+  <div class="section-inner ai-grid">
+    <div class="ai-copy reveal">
+      <span class="badge badge-pro">Pro Feature</span>
+      <h2 class="section-title">Let AI do the busywork</h2>
+      <p class="section-subtitle">DevStash Pro tags, summarizes, and explains your knowledge automatically.</p>
+      <ul class="ai-checklist">
+        <li><span class="check">✓</span> Automatic tag suggestions on every save</li>
+        <li><span class="check">✓</span> One-click AI summaries for long snippets and docs</li>
+        <li><span class="check">✓</span> "Explain this code" for any snippet</li>
+        <li><span class="check">✓</span> Prompt optimizer for your saved AI prompts</li>
+      </ul>
+    </div>
+    <div class="ai-demo reveal">
+      <div class="code-editor-mock">
+        <div class="editor-titlebar">
+          <span class="dot-red"></span><span class="dot-yellow"></span><span class="dot-green"></span>
+          <span class="editor-filename">useDebounce.ts</span>
+        </div>
+        <pre class="editor-body"><code><span class="tok-kw">import</span> { useEffect, useState } <span class="tok-kw">from</span> <span class="tok-str">"react"</span>;
+
+<span class="tok-kw">export function</span> <span class="tok-fn">useDebounce</span>&lt;T&gt;(value: T, delay = <span class="tok-num">300</span>): T {
+  <span class="tok-kw">const</span> [debounced, setDebounced] = <span class="tok-fn">useState</span>(value);
+
+  <span class="tok-fn">useEffect</span>(() =&gt; {
+    <span class="tok-kw">const</span> id = <span class="tok-fn">setTimeout</span>(() =&gt; <span class="tok-fn">setDebounced</span>(value), delay);
+    <span class="tok-kw">return</span> () =&gt; <span class="tok-fn">clearTimeout</span>(id);
+  }, [value, delay]);
+
+  <span class="tok-kw">return</span> debounced;
+}</code></pre>
+        <div class="ai-tags-demo">
+          <span class="ai-tag-label">AI Generated Tags</span>
+          <span class="ai-tag">react</span>
+          <span class="ai-tag">hooks</span>
+          <span class="ai-tag">typescript</span>
+          <span class="ai-tag">debounce</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pricing" id="pricing">
+  <div class="section-inner">
+    <h2 class="section-title reveal">Simple, honest pricing</h2>
+    <p class="section-subtitle reveal">Start free. Upgrade when you need more room.</p>
+
+    <div class="pricing-toggle reveal">
+      <span class="toggle-label" id="labelMonthly">Monthly</span>
+      <button class="toggle-switch" id="billingToggle" role="switch" aria-checked="false" aria-label="Toggle yearly billing">
+        <span class="toggle-knob"></span>
+      </button>
+      <span class="toggle-label" id="labelYearly">Yearly <span class="toggle-save">save ~25%</span></span>
+    </div>
+
+    <div class="pricing-grid">
+      <div class="price-card reveal">
+        <h3>Free</h3>
+        <p class="price"><span class="price-amount">$0</span><span class="price-period">/mo</span></p>
+        <ul class="price-features">
+          <li>50 items total</li>
+          <li>3 collections</li>
+          <li>All types except files &amp; images</li>
+          <li>Basic search</li>
+        </ul>
+        <a href="#" class="btn btn-ghost btn-block">Get Started</a>
+      </div>
+      <div class="price-card price-card-pro reveal">
+        <span class="badge-popular">Most Popular</span>
+        <h3>Pro</h3>
+        <p class="price">
+          <span class="price-amount" data-monthly="$8" data-yearly="$6">$8</span><span class="price-period" data-monthly="/mo" data-yearly="/mo, billed yearly">/mo</span>
+        </p>
+        <ul class="price-features">
+          <li>Unlimited items &amp; collections</li>
+          <li>File &amp; image uploads</li>
+          <li>AI auto-tagging &amp; summaries</li>
+          <li>AI "Explain this code"</li>
+          <li>Prompt optimizer</li>
+          <li>Priority support</li>
+        </ul>
+        <a href="#" class="btn btn-primary btn-block">Start Free Trial</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta">
+  <div class="section-inner cta-inner reveal">
+    <h2>Ready to Organize Your Knowledge?</h2>
+    <p>Join developers who stopped losing their best code, prompts, and commands.</p>
+    <a href="#" class="btn btn-primary btn-lg">Get Started Free</a>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="section-inner footer-inner">
+    <div class="footer-brand">
+      <span class="brand-mark">&lt;/&gt;</span>
+      <span class="brand-name">DevStash</span>
+      <p>Your developer knowledge hub.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+    </div>
+    <div class="footer-col">
+      <h4>Company</h4>
+      <a href="#">About</a>
+      <a href="#">Blog</a>
+    </div>
+    <div class="footer-col">
+      <h4>Legal</h4>
+      <a href="#">Privacy</a>
+      <a href="#">Terms</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>&copy; <span id="year"></span> DevStash. All rights reserved.</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
