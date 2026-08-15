@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
+import { useOptimisticToggle } from "@/hooks/use-optimistic-toggle";
 import { toggleCollectionFavorite } from "@/lib/collections-client";
 import { type DashboardCollection } from "@/lib/db/collections";
 import { itemTypeIcons } from "@/lib/item-icons";
@@ -29,7 +29,7 @@ export function CollectionCard({
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const { accentColor, types } = collection;
-  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+  const { value: favorite, toggle: toggleFavorite } = useOptimisticToggle(
     collection.isFavorite,
     () => toggleCollectionFavorite(collection.id),
   );

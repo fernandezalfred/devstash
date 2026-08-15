@@ -6,7 +6,7 @@ import { Pencil, Star, Trash2 } from "lucide-react";
 
 import { DeleteCollectionDialog } from "@/components/dashboard/DeleteCollectionDialog";
 import { EditCollectionDialog } from "@/components/dashboard/EditCollectionDialog";
-import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
+import { useOptimisticToggle } from "@/hooks/use-optimistic-toggle";
 import { toggleCollectionFavorite } from "@/lib/collections-client";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +25,7 @@ export function CollectionHeaderActions({
   const router = useRouter();
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+  const { value: favorite, toggle: toggleFavorite } = useOptimisticToggle(
     collection.isFavorite,
     () => toggleCollectionFavorite(collection.id),
   );

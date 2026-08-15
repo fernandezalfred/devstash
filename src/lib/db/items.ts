@@ -225,10 +225,10 @@ export interface ItemsByType {
   totalPages: number;
 }
 
-// A single page of items of one system type for the given user, most
-// recently updated first, plus the resolved type metadata. `slug` is the
-// plural route slug ("snippets"); `page` is 1-indexed and clamped to the
-// valid range. Only fetches the requested page (count + a `skip`/`take`
+// A single page of items of one system type for the given user, pinned items
+// first then most recently updated, plus the resolved type metadata. `slug`
+// is the plural route slug ("snippets"); `page` is 1-indexed and clamped to
+// the valid range. Only fetches the requested page (count + a `skip`/`take`
 // findMany), never the full list.
 export async function getItemsByType(
   slug: string,
@@ -250,7 +250,7 @@ export async function getItemsByType(
 
   const items = await prisma.item.findMany({
     where,
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }],
     skip: (currentPage - 1) * ITEMS_PER_PAGE,
     take: ITEMS_PER_PAGE,
     include: itemInclude,
@@ -279,11 +279,11 @@ export interface ItemsByCollection {
 }
 
 // A single page of a collection's items (via the ItemCollection join),
-// scoped to the given user, ordered as one combined list across types (most
-// recently updated first) — the page groups items by type for rendering, but
-// the 21-per-page window applies to the combined list, not per type. `page`
-// is 1-indexed and clamped to the valid range. Only fetches the requested
-// page, never the full list.
+// scoped to the given user, ordered as one combined list across types
+// (pinned items first, then most recently updated) — the page groups items
+// by type for rendering, but the 21-per-page window applies to the combined
+// list, not per type. `page` is 1-indexed and clamped to the valid range.
+// Only fetches the requested page, never the full list.
 export async function getItemsByCollection(
   collectionId: string,
   userId: string,
@@ -295,7 +295,7 @@ export async function getItemsByCollection(
 
   const items = await prisma.item.findMany({
     where,
-    orderBy: { updatedAt: "desc" },
+    orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }],
     skip: (currentPage - 1) * ITEMS_PER_PAGE,
     take: ITEMS_PER_PAGE,
     include: itemInclude,
@@ -494,6 +494,28 @@ export async function toggleItemFavorite(
     select: { isFavorite: true },
   });
   return updated.isFavorite;
+}
+
+// Toggle Item.isPinned for the given user's item. Returns the item's new
+// isPinned value, or null when the item isn't found under that user (mirrors
+// toggleItemFavorite's ownership-check pattern) so the action can report
+// not-found instead of throwing.
+export async function toggleItemPin(
+  id: string,
+  userId: string,
+): Promise<boolean | null> {
+  const existing = await prisma.item.findFirst({
+    where: { id, userId },
+    select: { isPinned: true },
+  });
+  if (!existing) return null;
+
+  const updated = await prisma.item.update({
+    where: { id },
+    data: { isPinned: !existing.isPinned },
+    select: { isPinned: true },
+  });
+  return updated.isPinned;
 }
 
 export interface DeleteItemResult {

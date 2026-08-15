@@ -2,7 +2,7 @@
 
 // Client-side helper for PATCH /api/collections/[id]/favorite, shared by
 // CollectionHeaderActions and CollectionCard (both drive the same
-// useFavoriteToggle hook against this endpoint).
+// useOptimisticToggle hook against this endpoint).
 export async function toggleCollectionFavorite(
   id: string,
 ): Promise<{ success: boolean; error?: string }> {

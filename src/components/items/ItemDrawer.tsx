@@ -22,7 +22,12 @@ import {
   Trash2,
 } from "lucide-react";
 
-import { deleteItem, toggleItemFavorite, updateItem } from "@/actions/items";
+import {
+  deleteItem,
+  toggleItemFavorite,
+  toggleItemPin,
+  updateItem,
+} from "@/actions/items";
 import {
   CodeEditor,
   codeFallbackLanguage,
@@ -48,7 +53,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { toast } from "@/components/ui/toast";
-import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
+import { useOptimisticToggle } from "@/hooks/use-optimistic-toggle";
 import { type CollectionOption } from "@/lib/db/collections";
 import { type ItemDetail } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
@@ -171,9 +176,16 @@ function ItemDrawerBody({
   const accent = item.type.color;
   const typeName = item.type.name.toLowerCase();
   const [editing, setEditing] = useState(false);
-  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+  const { value: favorite, toggle: toggleFavorite } = useOptimisticToggle(
     item.isFavorite,
     () => toggleItemFavorite(item.id),
+  );
+  const { value: pinned, toggle: togglePin } = useOptimisticToggle(
+    item.isPinned,
+    () => toggleItemPin(item.id),
+    {
+      successMessage: (next) => (next ? "Item pinned." : "Item unpinned."),
+    },
   );
 
   if (editing) {
@@ -216,7 +228,7 @@ function ItemDrawerBody({
           </div>
         </div>
 
-        {/* Action bar — Favorite is wired; Pin/Copy remain display-only for now. */}
+        {/* Action bar — Favorite and Pin are wired; Copy remains display-only for now. */}
         <div className="mt-5 flex items-center gap-1">
           <ActionButton
             icon={Star}
@@ -228,8 +240,9 @@ function ItemDrawerBody({
           <ActionButton
             icon={Pin}
             label="Pin"
-            active={item.isPinned}
+            active={pinned}
             activeClassName="text-foreground"
+            onClick={() => togglePin()}
           />
           <ActionButton icon={Copy} label="Copy" />
           <div className="ml-auto flex items-center gap-1">
