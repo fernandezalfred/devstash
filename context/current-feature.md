@@ -1,14 +1,25 @@
-# Current Feature
+# Current Feature: Pinned Items
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- New `toggleItemPin(id, userId)` query (`src/lib/db/items.ts`, ownership-scoped flip — mirrors `toggleItemFavorite`) + a matching `toggleItemPin` Server Action (`src/actions/items.ts`)
+- Wire the `ItemDrawer`'s Pin `ActionButton` (`src/components/items/ItemDrawer.tsx`) with an `onClick` — it currently has `active`/`activeClassName` but no click handler at all, unlike the already-wired Favorite button
+- Optimistic UI: the pin icon flips instantly on click, following the Favorite button's pattern (`useFavoriteToggle` in `src/hooks/use-favorite-toggle.ts`)
+- Toast notification on **both** success and error (a deliberate difference from the Favorite pattern, which only toasts on error — per spec)
+- Pinned items sort to the top of item listings — `/items/[type]` (`getItemsByType`) and `/collections/[id]` (`getItemsByCollection`), both currently plain `updatedAt desc` with no pinned-first ordering
+- `ItemCard`/`ImageCard`/`FileRow` are explicitly NOT touched — their Pin icon stays a static, non-clickable indicator (per spec, unlike the Favorite feature which added a toggle to all three)
+- Items only — no collection-pin concept exists or is being added
 
 ## Notes
+
+- Spec: `context/features/pinned-spec.md`.
+- "Follow Favorite Button pattern" (spec) — the existing `useFavoriteToggle` hook already generalizes cleanly (it takes an `initialFavorite`/`mutate` pair with no favorite-specific logic beyond naming); decide at start whether to generalize/rename it for reuse by both toggles, or add a small parallel `usePinToggle`. Whichever is chosen, the optimistic-flip/rollback/refresh behavior should match exactly.
+- Scoping call: "sort to top of listings" is read as `/items/[type]` and `/collections/[id]` — the two card-grid listing pages. The dashboard's separate "Pinned" section (`getPinnedItems`) already exists and isn't a listing to resort; the dashboard's "Recent" section (`getRecentItems`) and the Favorites page are left as pure chronological/favorited-order and NOT given pinned-first treatment, since the spec says "listings" not "everywhere `isPinned` is read." Flag this at start in case the user wants Recent included too.
+- No schema/migration change — `Item.isPinned` already exists and is used for read/display everywhere.
 
 <!-- Keep this updated. Earliest to latest -->
 

@@ -6,7 +6,7 @@ import { Check, Copy, Pin, Star } from "lucide-react";
 
 import { toggleItemFavorite } from "@/actions/items";
 import { useItemDrawer } from "@/components/items/ItemDrawer";
-import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
+import { useOptimisticToggle } from "@/hooks/use-optimistic-toggle";
 import { type DashboardItem } from "@/lib/db/items";
 import { itemTypeIcons } from "@/lib/item-icons";
 import { cn } from "@/lib/utils";
@@ -25,7 +25,7 @@ export function ItemCard({ item }: { item: DashboardItem }) {
   const accent = item.typeColor;
   const { open } = useItemDrawer();
   const [copied, setCopied] = useState(false);
-  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+  const { value: favorite, toggle: toggleFavorite } = useOptimisticToggle(
     item.isFavorite,
     () => toggleItemFavorite(item.id),
   );

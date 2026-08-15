@@ -16,7 +16,7 @@ import {
 
 import { toggleItemFavorite } from "@/actions/items";
 import { useItemDrawer } from "@/components/items/ItemDrawer";
-import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
+import { useOptimisticToggle } from "@/hooks/use-optimistic-toggle";
 import { type DashboardItem } from "@/lib/db/items";
 import { fileExtension, formatBytes } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
@@ -56,7 +56,7 @@ export function FileRow({ item }: { item: DashboardItem }) {
   const ext = item.fileName ? fileExtension(item.fileName) : null;
   const icon = (ext && EXTENSION_ICONS[ext]) || File;
   const accent = item.typeColor;
-  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+  const { value: favorite, toggle: toggleFavorite } = useOptimisticToggle(
     item.isFavorite,
     () => toggleItemFavorite(item.id),
   );

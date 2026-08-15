@@ -7,6 +7,7 @@ import {
   createItem as createItemQuery,
   deleteItem as deleteItemQuery,
   toggleItemFavorite as toggleItemFavoriteQuery,
+  toggleItemPin as toggleItemPinQuery,
   updateItem as updateItemQuery,
   type ItemDetail,
 } from "@/lib/db/items";
@@ -219,6 +220,35 @@ export async function toggleItemFavorite(
     return {
       success: false,
       error: "Could not update favorite. Please try again.",
+    };
+  }
+}
+
+type TogglePinResult =
+  | { success: true; data: { isPinned: boolean } }
+  | { success: false; error: string };
+
+// Toggle an item's pinned flag. A lightweight companion to updateItem for the
+// drawer's Pin button, which shouldn't need a full edit payload just to flip
+// one field — mirrors toggleItemFavorite.
+export async function toggleItemPin(
+  itemId: string,
+): Promise<TogglePinResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "You must be signed in to do that." };
+  }
+
+  try {
+    const isPinned = await toggleItemPinQuery(itemId, session.user.id);
+    if (isPinned === null) {
+      return { success: false, error: "Item not found." };
+    }
+    return { success: true, data: { isPinned } };
+  } catch {
+    return {
+      success: false,
+      error: "Could not update pin. Please try again.",
     };
   }
 }

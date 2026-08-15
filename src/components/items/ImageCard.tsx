@@ -6,7 +6,7 @@ import { ImageOff, Pin, Star } from "lucide-react";
 
 import { toggleItemFavorite } from "@/actions/items";
 import { useItemDrawer } from "@/components/items/ItemDrawer";
-import { useFavoriteToggle } from "@/hooks/use-favorite-toggle";
+import { useOptimisticToggle } from "@/hooks/use-optimistic-toggle";
 import { type DashboardItem } from "@/lib/db/items";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ function formatItemDate(iso: string): string {
 export function ImageCard({ item }: { item: DashboardItem }) {
   const { open } = useItemDrawer();
   const [failed, setFailed] = useState(false);
-  const { favorite, toggle: toggleFavorite } = useFavoriteToggle(
+  const { value: favorite, toggle: toggleFavorite } = useOptimisticToggle(
     item.isFavorite,
     () => toggleItemFavorite(item.id),
   );
