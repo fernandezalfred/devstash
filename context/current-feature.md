@@ -1,14 +1,29 @@
-# Current Feature
+# Current Feature: Homepage
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- Replace the placeholder `/` route (`src/app/page.tsx`, currently just `<h1>Devstash</h1>`) with a real marketing homepage, built from the static mockup at `prototypes/homepage/`
+- Sections in order: Nav, Hero (headline + chaos/arrow/dashboard-preview visual), Features (6 cards), AI (Pro checklist + code editor mock), Pricing (Free/Pro + monthly/yearly toggle), CTA, Footer
+- Server components by default; isolate interactivity into small client components: chaos-icon animation, scroll-reveal, navbar-opacity-on-scroll, pricing monthly/yearly toggle — not whole sections
+- Tailwind CSS v4 (existing `@theme` tokens) + shadcn/ui primitives (`Button`, etc.), consistent with the rest of the app — not the mockup's standalone CSS
+- Reuse real app data instead of the mockup's hardcoded placeholders: item-type colors/icons from `src/lib/item-icons.ts` and the seeded `ItemType` colors
+- DRY: shared bits (buttons, section wrapper, gradient-text headline) as small reusable components, not copy-pasted per section
+- Port the mockup's animations as React/TypeScript with the same tuned behavior (chaos drift/bounce/rotate/scale-pulse/cursor-repel via `requestAnimationFrame`, CSS arrow pulse, `IntersectionObserver` scroll-reveal, navbar opacity-on-scroll)
+- Footer copyright year computed at render, not hardcoded
+- Links wired to real destinations (see Notes for the full mapping) — nothing left pointing at `#`/placeholder for pages that actually exist
 
 ## Notes
+
+- Spec: `context/features/homepage-spec.md`. Mockup reference (visual/copy/animation intent only, not linked to or served): `prototypes/homepage/index.html`, `styles.css`, `script.js` (built + tuned in the prior `feature/homepage-mockup` session — same drift/repel constants, same bug fixes already baked in, e.g. the grid `min-width:0` fix and the arrow-rotation-on-wrapper fix).
+- Link mapping: Nav Sign In → `/sign-in`, Get Started → `/register`, Features/Pricing → `#features`/`#pricing` anchors. Hero: Get Started Free → `/register`, See Features → `#features`. Pricing: Free "Get Started" → `/register`, Pro "Start Free Trial" → `/register` (no billing integration yet). CTA section button → `/register`. If already signed in (`getCurrentUser()` from `src/lib/db/users.ts`), primary CTAs should point to `/dashboard` instead of `/register`. Footer: Features/Pricing real anchors; About/Blog/Privacy/Terms have no pages yet — leave as non-navigating placeholders rather than broken links.
+- Planned file layout: new `src/app/page.tsx` (server component) composing section components from a new `src/components/homepage/` directory; client components `ChaosVisual`, a scroll-reveal wrapper/hook, `Navbar` (scroll opacity), `PricingToggle` (local state only, no persistence).
+- No new npm dependencies — CSS handles the arrow pulse and gradient text; the chaos animation stays a plain `requestAnimationFrame` loop inside a `useEffect`.
+- `/` is already outside `src/proxy.ts`'s matcher (public) — no auth/middleware changes needed beyond the optional signed-in-CTA check above.
+- No DB/schema changes expected.
 
 <!-- Keep this updated. Earliest to latest -->
 
