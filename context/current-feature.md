@@ -1,14 +1,31 @@
-# Current Feature
+# Current Feature: Homepage Mockup
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- Standalone static prototype at `prototypes/homepage/` — `index.html`, `styles.css`, `script.js` (plain HTML/CSS/JS, no Next.js/React/build step; NOT wired into the app's `src/app` routing)
+- Dark theme using the spec's 7 item-type accent colors (snippet blue `#3b82f6`, prompt amber `#f59e0b`, command cyan `#06b6d4`, note green `#22c55e`, file slate `#64748b`, image pink `#ec4899`, url indigo `#6366f1`)
+- Fixed top nav: logo, Features/Pricing links, Sign In/Get Started buttons; gets more opaque on scroll
+- Hero: gradient-text headline ("Stop Losing Your Developer Knowledge") + subheadline + CTAs, above a three-part "chaos → order" visual:
+  - Chaos box (left): "Your knowledge today..." with 8 floating tool icons (Notion, GitHub, Slack, VS Code, browser tabs, terminal, text file, bookmark) animated via `requestAnimationFrame` — drift, wall-bounce, subtle rotate/scale pulse, repel from cursor on hover
+  - Arrow (center): CSS pulse animation, chaos → order
+  - Dashboard preview box (right): "...with DevStash" — mock sidebar + item cards with type-colored top borders
+- Features grid: 6 cards (Code Snippets, AI Prompts, Instant Search, Commands, Files & Docs, Collections), each tinted with its item-type accent color
+- AI section: two columns — left a "Pro Feature" badge + capability checklist, right a code-editor mockup demoing "AI Generated Tags"
+- Pricing: Free ($0 / 50 items / 3 collections) vs Pro ($8/mo, unlimited + AI), Pro card has a "Most Popular" badge, plus a monthly/yearly ($72/yr) toggle
+- CTA section: "Ready to Organize Your Knowledge?" + button
+- Footer: logo, link columns, copyright with the current year
+- Scroll-triggered fade-in for sections
+- Responsive: chaos/arrow/dashboard stack vertically on mobile (single-column grids elsewhere too), arrow rotates 90° to point down on mobile
 
 ## Notes
+
+- Spec: `context/features/homepage-mockup-spec.md`.
+- This is a marketing prototype, not a real app route — deliberately outside `src/app` and outside the Next.js build/TypeScript/Tailwind/testing conventions in `context/coding-standards.md` (which govern the actual DevStash app, not this static mockup). No server components, no server actions, no Vitest coverage expected.
+- Not asked to wire this into the real `/` route (which is currently a placeholder per earlier cleanup notes) — this is a standalone folder to view independently, not a replacement for the app's homepage, unless clarified otherwise at start.
 
 <!-- Keep this updated. Earliest to latest -->
 
