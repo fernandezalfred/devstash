@@ -129,6 +129,13 @@
     }
 }
 
+/* Homepage hero arrow pulse (chaos -> order visual), referenced via an
+   arbitrary-value Tailwind animate-[] utility rather than a named class. */
+@keyframes arrow-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.85; }
+    50% { transform: scale(1.12); opacity: 1; }
+}
+
 /* Markdown preview (react-markdown output). Unlayered so it overrides Tailwind's
    preflight resets. Always dark to match the editor container; scoped under
    `.markdown-preview` so it never leaks into the rest of the app. */
