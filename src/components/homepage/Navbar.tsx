@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Sparkles } from "lucide-react";
+import { Menu, Sparkles, X } from "lucide-react";
 
 import { PrimaryButton } from "@/components/homepage/PrimaryButton";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ export function Navbar({
   ctaHref: string;
 }) {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     function onScroll() {
@@ -34,9 +35,9 @@ export function Navbar({
       )}
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-6 px-6">
-        <Link href="/" className="flex items-center gap-2 text-base font-semibold">
+        <Link href="/" aria-label="DevStash" className="flex items-center gap-2 text-base font-semibold">
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Sparkles className="size-4" />
+            <Sparkles className="size-4" aria-hidden="true" />
           </span>
           <span className="hidden sm:inline">DevStash</span>
         </Link>
@@ -51,6 +52,19 @@ export function Navbar({
         </nav>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen((open) => !open)}
+            className="flex size-9 items-center justify-center rounded-md text-foreground sm:hidden"
+          >
+            {mobileOpen ? (
+              <X className="size-5" aria-hidden="true" />
+            ) : (
+              <Menu className="size-5" aria-hidden="true" />
+            )}
+          </button>
           {signedIn ? (
             <PrimaryButton href={ctaHref}>Dashboard</PrimaryButton>
           ) : (
@@ -63,6 +77,25 @@ export function Navbar({
           )}
         </div>
       </div>
+
+      {mobileOpen && (
+        <nav className="flex flex-col gap-1 border-t border-border bg-background px-6 py-3 text-sm sm:hidden">
+          <Link
+            href="#features"
+            onClick={() => setMobileOpen(false)}
+            className="rounded-md px-2 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            Features
+          </Link>
+          <Link
+            href="#pricing"
+            onClick={() => setMobileOpen(false)}
+            className="rounded-md px-2 py-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            Pricing
+          </Link>
+        </nav>
+      )}
     </header>
   );
 }

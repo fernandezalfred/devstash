@@ -31,9 +31,9 @@ export function TopBar({
   return (
     <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border bg-background px-4">
       <div className="flex items-center gap-1.5 font-semibold">
-        <Link href="/dashboard" className="flex items-center gap-1.5">
+        <Link href="/dashboard" aria-label="DevStash" className="flex items-center gap-1.5">
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Sparkles className="size-4" />
+            <Sparkles className="size-4" aria-hidden="true" />
           </span>
           <span className="hidden text-sm sm:inline">DevStash</span>
         </Link>
