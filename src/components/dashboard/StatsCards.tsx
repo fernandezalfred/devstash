@@ -48,18 +48,18 @@ export function StatsCards({ stats }: { stats: DashboardStats }) {
       {cards.map(({ label, value, icon: Icon, iconClass, boxClass }) => (
         <div
           key={label}
-          className="flex items-center gap-4 rounded-xl border border-border bg-card p-5"
+          className="flex items-center gap-3 rounded-xl border border-border bg-card p-4 sm:gap-4 sm:p-5"
         >
           <span
             className={cn(
-              "flex size-11 shrink-0 items-center justify-center rounded-lg",
+              "flex size-9 shrink-0 items-center justify-center rounded-lg sm:size-11",
               boxClass,
             )}
           >
-            <Icon className={cn("size-5", iconClass)} />
+            <Icon className={cn("size-4 sm:size-5", iconClass)} />
           </span>
           <div className="min-w-0">
-            <p className="truncate text-xs font-medium text-muted-foreground">
+            <p className="text-xs leading-tight font-medium text-muted-foreground">
               {label}
             </p>
             <p className="text-2xl font-semibold">{value}</p>

@@ -146,8 +146,8 @@ export function CreateItemDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm">
-          <Plus className="size-4" />
+        <Button size="sm" aria-label={triggerLabel}>
+          <Plus className="size-4" aria-hidden="true" />
           <span className="hidden sm:inline">{triggerLabel}</span>
         </Button>
       </DialogTrigger>

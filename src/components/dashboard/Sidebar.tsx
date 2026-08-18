@@ -114,7 +114,7 @@ export function Sidebar({
             <>
               {favoriteCollections.length > 0 && (
                 <>
-                  <p className="px-2 pt-1.5 pb-0.5 text-sm font-semibold tracking-wider text-muted-foreground/70 lowercase">
+                  <p className="px-2 pt-1.5 pb-0.5 text-sm font-semibold tracking-wider text-muted-foreground lowercase">
                     Favorites
                   </p>
                   {favoriteCollections.map((collection) => (
@@ -130,7 +130,7 @@ export function Sidebar({
                 </>
               )}
 
-              <p className="px-2 pt-1.5 pb-0.5 text-sm font-semibold tracking-wider text-muted-foreground/70 lowercase">
+              <p className="px-2 pt-1.5 pb-0.5 text-sm font-semibold tracking-wider text-muted-foreground lowercase">
                 Recents
               </p>
               {otherCollections.map((collection) => (

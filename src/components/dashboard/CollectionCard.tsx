@@ -103,7 +103,7 @@ export function CollectionCard({
             <button
               type="button"
               aria-label="Collection actions"
-              className="flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:bg-muted data-[state=open]:opacity-100"
+              className="flex size-7 items-center justify-center rounded-md text-muted-foreground opacity-0 pointer-coarse:opacity-100 transition-opacity hover:bg-muted hover:text-foreground focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:bg-muted data-[state=open]:opacity-100"
             >
               <MoreVertical className="size-4" />
             </button>
