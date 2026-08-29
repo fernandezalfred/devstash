@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, Sparkles, X } from "lucide-react";
+import { FolderOpen, Menu, X } from "lucide-react";
 
 import { PrimaryButton } from "@/components/homepage/PrimaryButton";
 import { Button } from "@/components/ui/button";
@@ -37,7 +37,7 @@ export function Navbar({
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between gap-6 px-6">
         <Link href="/" aria-label="DevStash" className="flex items-center gap-2 text-base font-semibold">
           <span className="flex size-7 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <Sparkles className="size-4" aria-hidden="true" />
+            <FolderOpen className="size-4" aria-hidden="true" />
           </span>
           <span className="hidden sm:inline">DevStash</span>
         </Link>

@@ -1,14 +1,22 @@
-# Current Feature
+# Current Feature: Auth Nav + Folder Logo
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- Add the homepage's `Navbar` component (fixed top nav: logo, Features/Pricing links, mobile hamburger menu, Sign In / Get Started buttons) to the `/sign-in` and `/register` pages, so they share the same top nav as the homepage instead of the current plain centered "DevStash" text link.
+- Adjust the `/sign-in` and `/register` page layout (currently `min-h-screen items-center justify-center`) so the fixed nav doesn't overlap the centered auth card — matching the `pt-*` offset pattern the homepage's `Hero` already uses below its fixed `Navbar`.
+- Replace the brand logo icon (currently `Sparkles` from lucide-react) with a folder icon (e.g. `FolderOpen`) in both `src/components/homepage/Navbar.tsx` and `src/components/dashboard/TopBar.tsx`, keeping the existing colored badge/box styling — so the homepage nav and dashboard nav end up matching on a folder icon.
+- Update the site favicon to match the new folder logo, replacing the stale default Next.js icon.
 
 ## Notes
+
+- Confirmed via code read before writing this spec: the homepage `Navbar`'s logo currently uses `Sparkles`, not a folder icon as the request assumed — and the dashboard `TopBar` already uses that same `Sparkles` icon (they already match). Asked the user how to resolve this; they chose to switch both to a folder icon rather than leave `Sparkles` or specify a different one.
+- Favicon: `src/app/favicon.ico` was the unmodified default Next.js/create-next-app icon, unrelated to any DevStash branding. Added `src/app/icon.svg` (Next.js App Router metadata-file convention, auto-linked in `<head>`) reproducing the exact nav badge — an `oklch(0.922 0 0)`/`oklch(0.205 0 0)` (`--primary`/`--primary-foreground` in `.dark`, this app's only theme) rounded square at the same `rounded-md` proportions as the 28px `size-7` nav badge, with lucide's `FolderOpen` path scaled/positioned to match the `size-4` icon-in-badge ratio used in `Navbar`/`TopBar`. Deleted the old `favicon.ico` so only the new SVG icon is linked (verified via `link[rel*="icon"]` in a live page — previously both were present, which risked an old-browser fallback still showing the stale default icon).
+- `Navbar` takes `signedIn`/`ctaHref` props and renders "Sign In"/"Get Started" (or a "Dashboard" CTA when signed in) — reused as-is on the auth pages rather than customized, even though showing a "Sign In" button on the sign-in page itself (and "Get Started" on the register page) is slightly redundant; both pages already redirect away immediately if the user is signed in, so `signedIn` will always resolve `false` for any visitor who actually sees the page.
+- Homepage's `page.tsx` computes `signedIn`/`ctaHref` via `getCurrentUser()` + `dynamic = "force-dynamic"` — `/sign-in` already does the equivalent `getCurrentUser()` redirect check and can reuse it; `/register` currently only checks `user !== null` to redirect, will need the same `ctaHref` computation added.
 
 <!-- Keep this updated. Earliest to latest -->
 

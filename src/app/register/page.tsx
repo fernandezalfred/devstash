@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { Navbar } from "@/components/homepage/Navbar";
 import { getCurrentUser } from "@/lib/db/users";
 
 export default async function RegisterPage() {
@@ -11,20 +11,20 @@ export default async function RegisterPage() {
   if (user) redirect("/dashboard");
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm">
-        <div className="space-y-1 text-center">
-          <Link href="/" className="text-lg font-semibold">
-            DevStash
-          </Link>
-          <h1 className="text-xl font-semibold">Create your account</h1>
-          <p className="text-sm text-muted-foreground">
-            Start stashing your dev knowledge
-          </p>
-        </div>
+    <>
+      <Navbar signedIn={false} ctaHref="/register" />
+      <main className="flex min-h-screen items-center justify-center p-4 pt-14">
+        <div className="w-full max-w-sm space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm">
+          <div className="space-y-1 text-center">
+            <h1 className="text-xl font-semibold">Create your account</h1>
+            <p className="text-sm text-muted-foreground">
+              Start stashing your dev knowledge
+            </p>
+          </div>
 
-        <RegisterForm />
-      </div>
-    </main>
+          <RegisterForm />
+        </div>
+      </main>
+    </>
   );
 }
