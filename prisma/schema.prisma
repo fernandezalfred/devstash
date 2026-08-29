@@ -26,9 +26,11 @@ model User {
   passwordHash String?
 
   // Pro / billing
-  isPro                Boolean @default(false)
-  stripeCustomerId     String? @unique
-  stripeSubscriptionId String? @unique
+  isPro                  Boolean   @default(false)
+  stripeCustomerId       String?   @unique
+  stripeSubscriptionId   String?   @unique
+  stripePriceId          String?
+  stripeCurrentPeriodEnd DateTime?
 
   // Monaco editor preferences (font size, tab size, word wrap, minimap,
   // theme). Null until the user changes a preference; app code fills in

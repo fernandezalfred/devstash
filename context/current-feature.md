@@ -1,16 +1,31 @@
-# Current Feature
+# Current Feature: Stripe Integration Phase 1 — Core Infrastructure
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- Install the `stripe` npm package (server SDK only — no `@stripe/stripe-js`, since this uses hosted Checkout/Portal, not Stripe Elements)
+- Add a lazy Stripe client singleton in `src/lib/stripe.ts`, following the existing `src/lib/r2.ts` lazy-client pattern (so `next build` still works with no `STRIPE_SECRET_KEY` set)
+- Add price-id helpers in `src/lib/stripe.ts`: `priceIdFor(interval)` (resolves monthly/yearly Stripe price ids from env vars) and `intervalForPriceId(priceId)` (reverse lookup, for later webhook use)
+- Build a pure, DB-free usage-limits/gating module in `src/lib/plan.ts`:
+  - Free-tier item quota (50 items) — `checkItemQuota`
+  - Free-tier collection quota (3 collections) — `checkCollectionQuota`
+  - Pro-only type gating (`file` / `image` system types) — `checkTypeAllowed`
+  - Constants: `FREE_ITEM_LIMIT`, `FREE_COLLECTION_LIMIT`, `PRO_ONLY_TYPES`
+- Add `getPlanContext(userId)` — a DB-touching helper that loads a user's `isPro` flag + current item/collection counts in one call, for callers to pass into the pure checks
+- Unit test `src/lib/plan.ts` in `src/lib/plan.test.ts`: Pro bypass, at-limit rejection, under-limit pass, and file/image rejection for free users (`src/lib` is in the Vitest scope per `context/coding-standards.md`)
+- (Optional but recommended) Migration: add `stripePriceId String?` and `stripeCurrentPeriodEnd DateTime?` to `User` (research doc §4.1) — skippable for a true MVP; drive everything off `isPro` + `stripeCustomerId` + `stripeSubscriptionId` alone if skipped
+- Confirm the `.env`/`.env.example` Stripe vars are in place (`STRIPE_SECRET_KEY`, `STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_MONTHLY`, `STRIPE_PRICE_ID_YEARLY`) and fill `.env` with test-mode values
 
 ## Notes
 
-
+- Spec: `context/features/stripe-phase-1-spec.md`. Full research/reference: `docs/stripe-integration-plan.md` — read before implementing; it has exact code, file paths, and rationale for every item above (§1 current state, §3.3 lazy-client pattern, §4.1–§4.2, §4.5 automated checklist, §4.6 steps 1–4).
+- Files to create: `src/lib/stripe.ts`, `src/lib/plan.ts`, `src/lib/plan.test.ts`.
+- Files to modify: `package.json` (`npm install stripe`); `.env.example` (optionally group the `STRIPE_*` vars under a `# --- Billing (Stripe) ---` header with a pointer to the research doc — a working-tree diff already adds the 5 bare `STRIPE_*` vars to `.env.example` from a prior session, build on that rather than re-adding); `prisma/schema.prisma` only if doing the optional migration (run `npm run db:migrate` + `npm run db:generate` against the dev branch, never `db push`).
+- **Explicitly out of scope this phase (deferred to Phase 2 — spec at `context/features/stripe-phase-2-spec.md`):** wiring the gates into `createItem` / `POST /api/upload` / `POST /api/collections` (needs a real Pro account produced via Checkout to verify blocking behavior), the webhook route, Checkout/Portal Server Actions, Billing UI, and homepage pricing wiring.
+- Testing is automated only — no Stripe CLI or live Stripe account needed for this phase; everything is testable with `npm test`. Checklist: `plan.test.ts` passes (Pro bypass, at-limit, under-limit, file/image-for-free cases); full existing suite stays green; `npm run build` + `npm run lint` clean; if the optional migration was done, `npx prisma migrate status` shows in sync.
 
 <!-- Keep this updated. Earliest to latest -->
 
