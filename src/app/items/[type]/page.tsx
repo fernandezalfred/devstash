@@ -1,5 +1,4 @@
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { Sparkles } from "lucide-react";
 
 import { CreateItemDialog } from "@/components/items/CreateItemDialog";
@@ -7,7 +6,7 @@ import { FileRow } from "@/components/items/FileRow";
 import { ImageCard } from "@/components/items/ImageCard";
 import { ItemCard } from "@/components/items/ItemCard";
 import { PaginationControls } from "@/components/pagination/PaginationControls";
-import { Button } from "@/components/ui/button";
+import { BillingSection } from "@/components/settings/BillingSection";
 import { getCollectionsForPicker } from "@/lib/db/collections";
 import { getItemsByType, getSidebarItemTypes } from "@/lib/db/items";
 import { getCurrentUser } from "@/lib/db/users";
@@ -98,9 +97,7 @@ export default async function ItemsByTypePage({
               collections.
             </p>
           </div>
-          <Button asChild>
-            <Link href="/settings">Upgrade to Pro</Link>
-          </Button>
+          <BillingSection isPro={user.isPro} />
         </div>
       ) : (
         <>
