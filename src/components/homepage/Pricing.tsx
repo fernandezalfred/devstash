@@ -2,7 +2,13 @@ import { PricingCards } from "@/components/homepage/PricingCards";
 import { Reveal } from "@/components/homepage/Reveal";
 import { Section } from "@/components/homepage/Section";
 
-export function Pricing({ ctaHref }: { ctaHref: string }) {
+export function Pricing({
+  ctaHref,
+  signedIn,
+}: {
+  ctaHref: string;
+  signedIn: boolean;
+}) {
   return (
     <Section id="pricing">
       <Reveal className="mx-auto max-w-xl text-center">
@@ -13,7 +19,7 @@ export function Pricing({ ctaHref }: { ctaHref: string }) {
       </Reveal>
 
       <Reveal>
-        <PricingCards ctaHref={ctaHref} />
+        <PricingCards ctaHref={ctaHref} signedIn={signedIn} />
       </Reveal>
     </Section>
   );

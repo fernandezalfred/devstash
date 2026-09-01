@@ -61,6 +61,7 @@ export function DashboardShell({
               onToggleSidebar={toggle}
               itemTypes={itemTypes}
               collectionOptions={collectionOptions}
+              isPro={user.isPro}
             />
 
             <div className="flex flex-1 overflow-hidden">

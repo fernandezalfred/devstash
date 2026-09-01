@@ -15,11 +15,13 @@ import {
   toggleItemPin as toggleItemPinQuery,
   updateItem as updateItemQuery,
 } from "@/lib/db/items";
+import { getPlanContext } from "@/lib/plan";
 import { deleteFromR2 } from "@/lib/r2";
 
 // Mock the auth + DB + R2 boundaries so the action's own logic (auth gate, Zod
 // validation, empty-string normalization) is what's under test — no real
-// session, database, or bucket.
+// session, database, or bucket. @/lib/plan keeps its real (pure) gate
+// functions but mocks the DB-touching getPlanContext.
 vi.mock("@/auth", () => ({ auth: vi.fn() }));
 vi.mock("@/lib/db/items", () => ({
   updateItem: vi.fn(),
@@ -28,6 +30,10 @@ vi.mock("@/lib/db/items", () => ({
   toggleItemFavorite: vi.fn(),
   toggleItemPin: vi.fn(),
 }));
+vi.mock("@/lib/plan", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/plan")>("@/lib/plan");
+  return { ...actual, getPlanContext: vi.fn() };
+});
 vi.mock("@/lib/r2", () => ({ deleteFromR2: vi.fn() }));
 
 const mockedAuth = vi.mocked(auth);
@@ -37,6 +43,7 @@ const mockedCreateQuery = vi.mocked(createItemQuery);
 const mockedToggleFavoriteQuery = vi.mocked(toggleItemFavoriteQuery);
 const mockedTogglePinQuery = vi.mocked(toggleItemPinQuery);
 const mockedDeleteFromR2 = vi.mocked(deleteFromR2);
+const mockedGetPlanContext = vi.mocked(getPlanContext);
 
 // A minimal ItemDetail the query can echo back on success.
 const fakeItem = {
@@ -75,6 +82,11 @@ beforeEach(() => {
   mockedCreateQuery.mockResolvedValue(fakeItem);
   mockedToggleFavoriteQuery.mockResolvedValue(true);
   mockedTogglePinQuery.mockResolvedValue(true);
+  mockedGetPlanContext.mockResolvedValue({
+    isPro: false,
+    itemCount: 0,
+    collectionCount: 0,
+  });
 });
 
 const validCreate = {
@@ -311,6 +323,30 @@ describe("createItem action", () => {
       success: false,
       error: "Could not create the item. Please try again.",
     });
+  });
+
+  it("rejects a free user at the item quota", async () => {
+    mockedGetPlanContext.mockResolvedValue({
+      isPro: false,
+      itemCount: 50,
+      collectionCount: 0,
+    });
+    const result = await createItem(validCreate);
+    expect(result).toEqual({
+      success: false,
+      error: "Free plan is limited to 50 items. Upgrade to Pro for unlimited.",
+    });
+    expect(mockedCreateQuery).not.toHaveBeenCalled();
+  });
+
+  it("allows a Pro user past the free item quota", async () => {
+    mockedGetPlanContext.mockResolvedValue({
+      isPro: true,
+      itemCount: 500,
+      collectionCount: 0,
+    });
+    const result = await createItem(validCreate);
+    expect(result).toEqual({ success: true, data: fakeItem });
   });
 });
 

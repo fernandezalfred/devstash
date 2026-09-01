@@ -1,6 +1,5 @@
 import { notFound, redirect } from "next/navigation";
 
-import { auth } from "@/auth";
 import { CreateItemDialog } from "@/components/items/CreateItemDialog";
 import { FileRow } from "@/components/items/FileRow";
 import { ImageCard } from "@/components/items/ImageCard";
@@ -8,6 +7,7 @@ import { ItemCard } from "@/components/items/ItemCard";
 import { PaginationControls } from "@/components/pagination/PaginationControls";
 import { getCollectionsForPicker } from "@/lib/db/collections";
 import { getItemsByType, getSidebarItemTypes } from "@/lib/db/items";
+import { getCurrentUser } from "@/lib/db/users";
 import { itemTypeIcons } from "@/lib/item-icons";
 import { parsePageParam } from "@/lib/pagination";
 
@@ -27,15 +27,16 @@ export default async function ItemsByTypePage({
 
   // The parent items/layout.tsx already redirects unauthenticated users, but
   // this page has no local session read otherwise — add one so the queries
-  // below always get a real userId.
-  const session = await auth();
-  if (!session?.user?.id) redirect("/sign-in");
+  // below always get a real userId. getCurrentUser() (DB-backed) rather than
+  // the raw auth() JWT, since the Pro-gating badge below needs a fresh isPro.
+  const user = await getCurrentUser();
+  if (!user) redirect("/sign-in");
 
   const [{ type, items, currentPage, totalPages }, sidebarTypes, collectionOptions] =
     await Promise.all([
-      getItemsByType(slug, session.user.id, page),
-      getSidebarItemTypes(session.user.id),
-      getCollectionsForPicker(session.user.id),
+      getItemsByType(slug, user.id, page),
+      getSidebarItemTypes(user.id),
+      getCollectionsForPicker(user.id),
     ]);
 
   // Unknown type slug (not one of the system types) → 404.
@@ -66,6 +67,7 @@ export default async function ItemsByTypePage({
           collections={collectionOptions}
           initialType={type.name.toLowerCase()}
           triggerLabel={`New ${type.name}`}
+          isPro={user.isPro}
         />
       </div>
 

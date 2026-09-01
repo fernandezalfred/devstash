@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { auth } from "@/auth";
 import { createCollection } from "@/lib/db/collections";
+import { checkCollectionQuota, getPlanContext } from "@/lib/plan";
 
 const emptyToNull = (value: unknown) =>
   typeof value === "string" && value.trim() === "" ? null : value;
@@ -33,6 +34,12 @@ export async function POST(request: Request) {
   }
 
   const { name, description } = parsed.data;
+
+  const { isPro, collectionCount } = await getPlanContext(session.user.id);
+  const gate = checkCollectionQuota(isPro, collectionCount);
+  if (!gate.ok) {
+    return NextResponse.json({ success: false, error: gate.error }, { status: 403 });
+  }
 
   try {
     const collection = await createCollection(session.user.id, {

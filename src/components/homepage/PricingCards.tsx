@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
 
+import { createCheckoutSession } from "@/actions/billing";
 import { PrimaryButton } from "@/components/homepage/PrimaryButton";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 const FREE_FEATURES = [
@@ -26,9 +28,27 @@ const PRO_FEATURES = [
 
 // Owns the monthly/yearly toggle state — both the toggle switch and the Pro
 // card's price need to share it, so they live in one small client component
-// rather than the whole Pricing section being client.
-export function PricingCards({ ctaHref }: { ctaHref: string }) {
+// rather than the whole Pricing section being client. Signed-in visitors'
+// Pro CTA starts Checkout directly (using the toggle's interval); signed-out
+// visitors are routed to register first, same as every other CTA on the page.
+export function PricingCards({
+  ctaHref,
+  signedIn,
+}: {
+  ctaHref: string;
+  signedIn: boolean;
+}) {
   const [yearly, setYearly] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  const handleUpgrade = () => {
+    startTransition(async () => {
+      const res = await createCheckoutSession({
+        interval: yearly ? "yearly" : "monthly",
+      });
+      if (res && !res.success) toast(res.error, "error");
+    });
+  };
 
   return (
     <div className="mt-9">
@@ -101,9 +121,19 @@ export function PricingCards({ ctaHref }: { ctaHref: string }) {
               </li>
             ))}
           </ul>
-          <PrimaryButton href={ctaHref} className="w-full">
-            Start Free Trial
-          </PrimaryButton>
+          {signedIn ? (
+            <PrimaryButton
+              onClick={handleUpgrade}
+              disabled={pending}
+              className="w-full"
+            >
+              {yearly ? "Upgrade — $72/yr" : "Upgrade — $8/mo"}
+            </PrimaryButton>
+          ) : (
+            <PrimaryButton href={ctaHref} className="w-full">
+              Start Free Trial
+            </PrimaryButton>
+          )}
         </div>
       </div>
     </div>

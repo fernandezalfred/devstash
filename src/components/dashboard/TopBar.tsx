@@ -21,10 +21,12 @@ export function TopBar({
   onToggleSidebar,
   itemTypes = [],
   collectionOptions = [],
+  isPro = false,
 }: {
   onToggleSidebar?: () => void;
   itemTypes?: SidebarItemType[];
   collectionOptions?: CollectionOption[];
+  isPro?: boolean;
 }) {
   const { open: openPalette } = useCommandPalette();
 
@@ -71,7 +73,11 @@ export function TopBar({
           </Link>
         </Button>
         <CreateCollectionDialog />
-        <CreateItemDialog types={itemTypes} collections={collectionOptions} />
+        <CreateItemDialog
+          types={itemTypes}
+          collections={collectionOptions}
+          isPro={isPro}
+        />
       </div>
     </header>
   );

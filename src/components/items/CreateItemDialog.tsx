@@ -33,6 +33,10 @@ import { cn } from "@/lib/utils";
 const inputClass =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-foreground/30";
 
+// UX-only hint for free users — the create paths (createItem / POST
+// /api/upload) are the authoritative gate regardless of this.
+const PRO_ONLY_TYPE_NAMES = new Set(["file", "image"]);
+
 // The empty form state, keyed off the default (first) type.
 function emptyForm(type: string) {
   return {
@@ -55,18 +59,22 @@ export function CreateItemDialog({
   collections,
   initialType,
   triggerLabel = "New Item",
+  isPro = false,
 }: {
   types: SidebarItemType[];
   collections: CollectionOption[];
   initialType?: string;
   triggerLabel?: string;
+  isPro?: boolean;
 }) {
   const router = useRouter();
   const creatableValues = types.map((type) => type.name.toLowerCase());
+  const isSelectable = (value: string) =>
+    isPro || !PRO_ONLY_TYPE_NAMES.has(value);
   const startType =
-    initialType && creatableValues.includes(initialType)
+    initialType && creatableValues.includes(initialType) && isSelectable(initialType)
       ? initialType
-      : (creatableValues[0] ?? "snippet");
+      : (creatableValues.find(isSelectable) ?? creatableValues[0] ?? "snippet");
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState(() => emptyForm(startType));
   const [file, setFile] = useState<File | null>(null);
@@ -94,6 +102,7 @@ export function CreateItemDialog({
   ) => setForm((f) => ({ ...f, [key]: value }));
 
   const selectType = (value: string) => {
+    if (!isSelectable(value)) return;
     set("type", value);
     // A selected file may not satisfy the new type's constraints.
     if (value !== form.type) setFile(null);
@@ -161,22 +170,35 @@ export function CreateItemDialog({
             const value = type.name.toLowerCase();
             const Icon = itemTypeIcons[type.icon];
             const selected = form.type === value;
+            const selectable = isSelectable(value);
             return (
               <button
                 key={type.id}
                 type="button"
                 onClick={() => selectType(value)}
+                disabled={!selectable}
+                title={selectable ? undefined : `${type.name} is a Pro feature`}
                 className={cn(
                   "flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-sm transition-colors",
-                  selected
-                    ? "border-foreground/30 bg-muted"
-                    : "border-border text-muted-foreground hover:bg-muted",
+                  !selectable
+                    ? "cursor-not-allowed border-border text-muted-foreground/50"
+                    : selected
+                      ? "border-foreground/30 bg-muted"
+                      : "border-border text-muted-foreground hover:bg-muted",
                 )}
               >
                 {Icon && (
-                  <Icon className="size-4" style={{ color: type.color }} />
+                  <Icon
+                    className="size-4"
+                    style={{ color: selectable ? type.color : undefined }}
+                  />
                 )}
                 {type.name}
+                {!selectable && (
+                  <span className="rounded-full bg-yellow-400/15 px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-yellow-400 uppercase">
+                    Pro
+                  </span>
+                )}
               </button>
             );
           })}

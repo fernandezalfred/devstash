@@ -1,17 +1,30 @@
-# Current Feature
+# Current Feature: Stripe Integration Phase 2 — Integration & UI
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- **Feature gating enforcement** — wire Phase 1's `checkItemQuota` / `checkCollectionQuota` / `checkTypeAllowed` into the real create paths:
+  - `createItem` Server Action (`src/actions/items.ts`) — item quota gate, after the auth check
+  - `POST /api/upload` (`src/app/api/upload/route.ts`) — type gate (file/image → Pro-only) **and** item quota gate, both checked before touching R2
+  - `POST /api/collections` (`src/app/api/collections/route.ts`) — collection quota gate
+- **Webhook** — new `POST /api/stripe/webhook` (`src/app/api/stripe/webhook/route.ts`): verify signature against the raw request body, handle `checkout.session.completed` and `customer.subscription.created/updated/deleted`, sync `isPro` / `stripeSubscriptionId` (+ `stripePriceId` / `stripeCurrentPeriodEnd`, since Phase 1 did that migration) keyed off `stripeCustomerId`. Must stay outside `src/proxy.ts`'s matcher — no `auth()` gate, Stripe is the caller.
+- **Checkout + Billing Portal** — new `src/actions/billing.ts` Server Actions (`createCheckoutSession`, `createBillingPortalSession`) that create/reuse a Stripe customer, start a subscription Checkout session (monthly or yearly), and open the Billing Portal for existing subscribers. Checkout must persist `stripeCustomerId` to the user row *before* redirecting, so a retried checkout can't create a duplicate customer.
+- **Settings UI** — new `src/components/settings/BillingSection.tsx` (client) with Upgrade ($8/mo, $72/yr) or "Manage subscription" buttons; add a "Plan" section to `src/app/settings/page.tsx` showing current plan (Free/Pro) + the section, and a toast/banner reading `?checkout=success` / `?checkout=cancelled` off the redirect.
+- **Homepage pricing wiring** — `src/components/homepage/PricingCards.tsx`'s Pro CTA calls `createCheckoutSession` (signed in) using its existing monthly/yearly toggle state, or routes to `/register` (signed out).
+- Optional UX polish (do if time allows, not required): `UserMenu` upgrade affordance for Free users; Sidebar `files`/`images` rows link to `/settings` instead of `/items/files` for Free users; hide/disable file/image type options in `CreateItemDialog`/`TopBar` for Free users (server-side gate is authoritative either way); optional `"checkout"` rate limiter in `src/lib/rate-limit.ts`.
 
 ## Notes
 
+- Spec: `context/features/stripe-phase-2-spec.md`. Full research/reference: `docs/stripe-integration-plan.md` — read before implementing (§2 gating analysis, §3.1–§3.4 route/action/webhook conventions, §4.2–§4.4 full code + dashboard setup, §4.5 full manual checklist, §4.6 steps 5–10, §5 key risks).
+- **Prerequisite already satisfied:** Phase 1 (`src/lib/stripe.ts`, `src/lib/plan.ts` + tests, `stripe` installed, optional migration done) shipped and merged to main on 2026-08-29.
+- **This phase needs the Stripe CLI and/or a Stripe test-mode dashboard to verify end-to-end** — that's what separates it from Phase 1's automated-only testing. Dashboard setup prerequisite (research doc §4.4): create the *DevStash Pro* product with two recurring prices ($8/mo, $72/yr) and confirm the price ids in `.env` match; confirm `STRIPE_SECRET_KEY` is the test-mode key; activate the Customer Billing Portal (allow cancel + payment method update); run `stripe login` then `stripe listen --forward-to localhost:3000/api/stripe/webhook` locally and copy the printed `whsec_…` into `STRIPE_WEBHOOK_SECRET` (restart `npm run dev` after); set `AUTH_URL` explicitly (needed for `success_url`/`cancel_url`/`return_url`).
+- Webhook conventions differ from every other route in this codebase (research doc §3.4): raw body (`request.text()`, not `.json()`) for signature verification, no `auth()` guard, `stripe-signature` header, return `200` even for unhandled event types so Stripe stops retrying, idempotent upsert-style DB writes keyed on `stripeCustomerId`.
+- Key risks to keep in mind while implementing (research doc §5): `stripeCustomerId`/`stripeSubscriptionId` are `@unique` — persist the customer id *before* Checkout completes; `current_period_end` field naming may have shifted across Stripe API versions (verify against the installed `stripe@22.6.0`, whose pinned `apiVersion` Phase 1 set to `"2026-08-26.dahlia"`); no `<SessionProvider>`/`useSession()` exists in this app today — don't add one, server reads via `getCurrentUser()` are already fresh post-webhook.
 
-
+<!-- Keep this updated. Earliest to latest -->
 <!-- Keep this updated. Earliest to latest -->
 
 - 2026-05-06: Initial Next.js setup (created via `create-next-app`); pushed to `git@github.com:fernandezalfred/devstash.git`.

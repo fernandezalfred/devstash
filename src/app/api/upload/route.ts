@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { auth } from "@/auth";
 import { createFileItem } from "@/lib/db/items";
+import { checkItemQuota, checkTypeAllowed, getPlanContext } from "@/lib/plan";
 import { buildObjectKey, deleteFromR2, uploadToR2 } from "@/lib/r2";
 import {
   contentTypeForFileName,
@@ -75,6 +76,16 @@ export async function POST(request: Request) {
     );
   }
   const { type, title, description, tags, collectionIds } = parsed.data;
+
+  const { isPro, itemCount } = await getPlanContext(session.user.id);
+  const typeGate = checkTypeAllowed(isPro, type);
+  if (!typeGate.ok) {
+    return errorResponse(typeGate.error, 403);
+  }
+  const quotaGate = checkItemQuota(isPro, itemCount);
+  if (!quotaGate.ok) {
+    return errorResponse(quotaGate.error, 402);
+  }
 
   const file = formData.get("file");
   if (!(file instanceof File)) {

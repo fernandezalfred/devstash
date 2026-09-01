@@ -23,7 +23,7 @@ export default async function HomePage() {
         <Hero ctaHref={ctaHref} />
         <Features />
         <AISection />
-        <Pricing ctaHref={ctaHref} />
+        <Pricing ctaHref={ctaHref} signedIn={signedIn} />
         <CTASection ctaHref={ctaHref} />
       </main>
       <Footer />

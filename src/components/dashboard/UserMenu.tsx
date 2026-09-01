@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { signOut } from "next-auth/react";
-import { LogOut, Settings, User as UserIcon } from "lucide-react";
+import { LogOut, Settings, Sparkles, User as UserIcon } from "lucide-react";
 
 import { Avatar } from "@/components/ui/avatar";
 import {
@@ -73,6 +73,14 @@ export function UserMenu({ name, email, image, isPro }: UserMenuProps) {
               Settings
             </Link>
           </DropdownMenuItem>
+          {!isPro && (
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Sparkles />
+                Upgrade to Pro
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:bg-destructive/10 focus:text-destructive"

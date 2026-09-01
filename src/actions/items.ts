@@ -11,6 +11,7 @@ import {
   updateItem as updateItemQuery,
   type ItemDetail,
 } from "@/lib/db/items";
+import { checkItemQuota, getPlanContext } from "@/lib/plan";
 import { deleteFromR2 } from "@/lib/r2";
 
 // Treat an empty/whitespace-only string as "not set" so blank optional inputs
@@ -129,6 +130,12 @@ export async function createItem(
   const session = await auth();
   if (!session?.user?.id) {
     return { success: false, error: "You must be signed in to create items." };
+  }
+
+  const { isPro, itemCount } = await getPlanContext(session.user.id);
+  const gate = checkItemQuota(isPro, itemCount);
+  if (!gate.ok) {
+    return { success: false, error: gate.error };
   }
 
   const parsed = createItemSchema.safeParse(input);
