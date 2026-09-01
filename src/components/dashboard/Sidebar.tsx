@@ -82,13 +82,12 @@ export function Sidebar({
             itemTypes.map((type) => {
               const Icon = itemTypeIcons[type.icon];
               const isProType = PRO_TYPE_SLUGS.has(type.slug);
-              // Free users can't create file/image items — send them to
-              // Settings to upgrade instead of an /items/[type] page they
-              // can't act on. The server-side gate is authoritative either way.
-              const href =
-                isProType && !user.isPro ? "/settings" : `/items/${type.slug}`;
               return (
-                <Link key={type.id} href={href} className={navRowClass}>
+                <Link
+                  key={type.id}
+                  href={`/items/${type.slug}`}
+                  className={navRowClass}
+                >
                   {Icon && (
                     <Icon className="size-4" style={{ color: type.color }} />
                   )}
