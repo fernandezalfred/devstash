@@ -1,16 +1,21 @@
-# Current Feature
+# Current Feature: Gate /items/files and /items/images for Free users
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- Free users who navigate directly to `/items/files` or `/items/images` (both server-gated Pro-only types) see an upgrade prompt instead of the normal item list/pagination/"New {Type}" button.
+- Pro users see the page unchanged.
+- Reuse `checkTypeAllowed` from `src/lib/plan.ts` (the same gate already enforced server-side on `POST /api/upload`) rather than a new ad hoc check, so the UI gate and the real gate can't drift.
 
 ## Notes
 
-
+- Inline request, no spec file: "I don't want free users to be able to go to the /items/files or /items/images. Let's show an upgrade page if they visit those links."
+- Implementation site: `src/app/items/[type]/page.tsx`, which already resolves `user.isPro` via `getCurrentUser()` (added in Stripe Phase 2) and already has `type.name`/`type.slug` from `getItemsByType`.
+- The Sidebar already redirects free users to `/settings` instead of linking to these routes (Stripe Phase 2 polish), but a free user can still reach `/items/files`/`/items/images` directly by URL — this closes that gap.
+- This does not change the server-side upload gate (`POST /api/upload`) — that's already authoritative and unaffected by this UI-only change.
 
 <!-- Keep this updated. Earliest to latest -->
 
