@@ -13,22 +13,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-
-function PlanBadge({ isPro }: { isPro: boolean }) {
-  return (
-    <span
-      className={cn(
-        "shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase",
-        isPro
-          ? "bg-yellow-400/15 text-yellow-400"
-          : "bg-muted text-muted-foreground",
-      )}
-    >
-      {isPro ? "Pro" : "Free"}
-    </span>
-  );
-}
+import { PlanBadge } from "@/components/ui/plan-badge";
 
 export interface UserMenuProps {
   name: string | null;

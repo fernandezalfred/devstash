@@ -7,6 +7,7 @@ import { CheckoutStatusToast } from "@/components/settings/CheckoutStatusToast";
 import { DeleteAccountDialog } from "@/components/settings/DeleteAccountDialog";
 import { EditorPreferencesProvider } from "@/components/settings/EditorPreferencesContext";
 import { EditorPreferencesSection } from "@/components/settings/EditorPreferencesSection";
+import { PlanBadge } from "@/components/ui/plan-badge";
 import { getEditorPreferences, getProfileUser } from "@/lib/db/users";
 
 // Protected by the proxy (matcher includes /settings), with a guard here too.
@@ -45,9 +46,10 @@ export default async function SettingsPage({
         </h2>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-sm font-medium">
-              {user.isPro ? "Pro plan" : "Free plan"}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-medium">Current plan</p>
+              <PlanBadge isPro={user.isPro} size="md" />
+            </div>
             <p className="mt-1 text-sm text-muted-foreground">
               {user.isPro
                 ? "Unlimited items, collections, and file/image uploads."
