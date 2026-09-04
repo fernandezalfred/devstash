@@ -29,6 +29,8 @@ import {
   updateItem,
 } from "@/actions/items";
 import {
+  CODE_LANGUAGE_OPTIONS,
+  canonicalizeLanguage,
   CodeEditor,
   codeFallbackLanguage,
   isCodeEditorType,
@@ -47,6 +49,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/select";
 import {
   Sheet,
   SheetContent,
@@ -590,7 +593,7 @@ function ItemEditForm({
   const [title, setTitle] = useState(item.title);
   const [description, setDescription] = useState(item.description ?? "");
   const [content, setContent] = useState(item.content ?? "");
-  const [language, setLanguage] = useState(item.language ?? "");
+  const [language, setLanguage] = useState(canonicalizeLanguage(item.language));
   const [url, setUrl] = useState(item.url ?? "");
   const [tagsInput, setTagsInput] = useState(item.tags.join(", "));
   const [collectionIds, setCollectionIds] = useState(
@@ -689,6 +692,22 @@ function ItemEditForm({
           />
         </Field>
 
+        {showLanguage && (
+          <Field label="Language">
+            <Select
+              value={language}
+              onChange={(e) => setLanguage(e.target.value)}
+            >
+              <option value="">Auto</option>
+              {CODE_LANGUAGE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+
         {showContent && (
           <Field
             label="Content"
@@ -712,16 +731,6 @@ function ItemEditForm({
                 onChange={(e) => setContent(e.target.value)}
               />
             )}
-          </Field>
-        )}
-
-        {showLanguage && (
-          <Field label="Language">
-            <input
-              className={inputClass}
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-            />
           </Field>
         )}
 
