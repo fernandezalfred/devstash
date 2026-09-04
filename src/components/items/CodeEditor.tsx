@@ -87,6 +87,46 @@ function toMonacoLanguage(hint: string | null | undefined, fallback: string) {
   return fallback;
 }
 
+// One canonical, storable value per Monaco language — the options for the
+// language <select> in CreateItemDialog / ItemDrawer's edit form. Distinct
+// from LANGUAGE_ALIASES above, which maps many free-text hints (old data,
+// aliases) onto these same canonical ids for display/highlighting purposes.
+export const CODE_LANGUAGE_OPTIONS: { value: string; label: string }[] = [
+  { value: "javascript", label: "JavaScript" },
+  { value: "typescript", label: "TypeScript" },
+  { value: "python", label: "Python" },
+  { value: "ruby", label: "Ruby" },
+  { value: "go", label: "Go" },
+  { value: "rust", label: "Rust" },
+  { value: "java", label: "Java" },
+  { value: "c", label: "C" },
+  { value: "cpp", label: "C++" },
+  { value: "csharp", label: "C#" },
+  { value: "php", label: "PHP" },
+  { value: "html", label: "HTML" },
+  { value: "css", label: "CSS" },
+  { value: "scss", label: "SCSS" },
+  { value: "json", label: "JSON" },
+  { value: "yaml", label: "YAML" },
+  { value: "markdown", label: "Markdown" },
+  { value: "sql", label: "SQL" },
+  { value: "xml", label: "XML" },
+  { value: "dockerfile", label: "Dockerfile" },
+  { value: "shell", label: "Shell" },
+];
+
+// Normalizes a stored/free-text language hint (e.g. legacy "bash") to its
+// canonical dropdown value (e.g. "shell"), so a <select> initialized from
+// existing item data always lands on a real option instead of a blank one.
+// Unrecognized hints fall back to "" (the Auto/default option) rather than
+// showing a broken selection — the editor already treats them as plaintext.
+export function canonicalizeLanguage(hint: string | null | undefined): string {
+  const key = hint?.trim().toLowerCase();
+  if (!key) return "";
+  const canonical = LANGUAGE_ALIASES[key];
+  return canonical ?? "";
+}
+
 // The item types that use the Monaco code editor for their content field.
 // Everything else (prompt, note, …) keeps the plain textarea / line-numbered
 // display, per spec.

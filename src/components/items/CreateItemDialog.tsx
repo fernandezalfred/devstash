@@ -6,6 +6,7 @@ import { Loader2, Plus } from "lucide-react";
 
 import { createItem } from "@/actions/items";
 import {
+  CODE_LANGUAGE_OPTIONS,
   CodeEditor,
   codeFallbackLanguage,
   isCodeEditorType,
@@ -23,6 +24,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Select } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { type CollectionOption } from "@/lib/db/collections";
 import { type SidebarItemType } from "@/lib/db/items";
@@ -235,6 +237,22 @@ export function CreateItemDialog({
             </Field>
           )}
 
+          {showLanguage && (
+            <Field label="Language">
+              <Select
+                value={form.language}
+                onChange={(e) => set("language", e.target.value)}
+              >
+                <option value="">Auto</option>
+                {CODE_LANGUAGE_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          )}
+
           {showContent && (
             <Field
               label="Content"
@@ -261,16 +279,6 @@ export function CreateItemDialog({
                   onChange={(e) => set("content", e.target.value)}
                 />
               )}
-            </Field>
-          )}
-
-          {showLanguage && (
-            <Field label="Language">
-              <input
-                className={inputClass}
-                value={form.language}
-                onChange={(e) => set("language", e.target.value)}
-              />
             </Field>
           )}
 

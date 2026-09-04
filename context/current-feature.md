@@ -1,15 +1,21 @@
-# Current Feature
+# Language dropdown for code editor
 
 ## status
 
-
+In Progress
 
 ## Goals
 
-
+- Replace the free-text "Language" input with a dropdown (select) for snippet/command items, in both the New Item modal and the drawer's edit form.
+- Move the Language field above Content so the language is chosen before/while looking at the code.
+- Selecting a language updates the live Monaco syntax highlighting immediately (as-you-type, no save required).
 
 ## Notes
 
+- Monaco (`@monaco-editor/react`) already re-highlights reactively when its `language` prop changes (`setModelLanguage` on prop change) — confirmed in `node_modules/@monaco-editor/react/dist/index.mjs`. No editor-level change needed for the "as you type" behavior itself, just switching the input control.
+- `CodeEditor.tsx`'s existing `LANGUAGE_ALIASES` map has multiple free-text keys per canonical Monaco id (e.g. `js`/`jsx`/`javascript` → `javascript`); the new dropdown should store one canonical value per language (the alias map's *values*), not the raw aliases.
+- Existing stored `language` values (e.g. seed's `"bash"`) may not exactly match a canonical dropdown value — normalize on load so the edit form's dropdown doesn't show an unmatched/blank selection.
+- Implemented: `CodeEditor.tsx` exports `CODE_LANGUAGE_OPTIONS` (21 canonical languages, one value per Monaco id) and `canonicalizeLanguage()` (normalizes a stored/legacy hint via the existing `LANGUAGE_ALIASES` map, falling back to `""`/Auto for anything unrecognized). `CreateItemDialog.tsx` and `ItemDrawer.tsx`'s `ItemEditForm` both swapped the free-text Language `<input>` for the shared `Select` primitive populated from that list, and moved the Language field above Content (it only renders for snippet/command, which both also show Content). The edit form seeds its `language` state via `canonicalizeLanguage(item.language)` so an existing item's dropdown lands on a real option instead of blank. Build + lint + full test suite (112, unchanged — pure UI change, no new server-action/utility logic) pass. Verified live in-browser signed in as the demo user: editing "Typed Context provider" showed the dropdown pre-selected to "TypeScript" (correctly normalized) above the code, switching to Python live-recolored the existing TypeScript source under Python's tokenizer with no save; Cancel discarded the change correctly. In the New Item modal (Snippet type), Language renders above Content defaulting to "Auto"; typing Rust code then selecting "Rust" live-highlighted it correctly. No new console warnings (the 2 seen are the pre-existing, already-documented Radix `DialogContent` description warning).
 
 
 <!-- Keep this updated. Earliest to latest -->
